@@ -157,7 +157,9 @@ export default function BillingApp() {
   const [authError, setAuthError] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; confirmLabel?: string; danger?: boolean; resolve: (yes: boolean) => void } | null>(null);
   const [tab, setTab] = useState<Tab>("dash");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [company, setCompany] = useState<Company>(DEFAULT_CO);
   const [parties, setParties] = useState<Record<string, Party>>({});
   const [items, setItems] = useState<Record<string, Item>>({});
@@ -186,6 +188,9 @@ export default function BillingApp() {
     setNotice(text);
     window.setTimeout(() => setNotice(current => current === text ? "" : current), 3500);
   }, []);
+  const askConfirm = useCallback((title: string, message: string, options: { confirmLabel?: string; danger?: boolean } = {}) => new Promise<boolean>(resolve => {
+    setConfirmDialog({ title, message, ...options, resolve });
+  }), []);
   const applyData = useCallback((data: Database & { username?: string }) => {
     setCompany({ ...DEFAULT_CO, ...(data.company || {}) });
     setParties(data.parties || {});
@@ -235,9 +240,11 @@ export default function BillingApp() {
     if (kind === "docs") setDocs(current => { const next = { ...current }; delete next[id]; return next; });
   };
   const runAction = async (action: () => Promise<void>, success?: string) => {
+    setBusy(true);
     setError("");
     try { await action(); if (success) showNotice(success); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "The operation failed. Please try again."); }
+    finally { setBusy(false); }
   };
   const startNew = (type: Doc["type"]) => {
     setTab(type === "INV" ? "inv" : type === "QTN" ? "qtn" : "pur");
@@ -254,7 +261,7 @@ export default function BillingApp() {
     if (!lines.length) { setError("Add at least one item."); return; }
     if (lines.some(line => number(line.qty) <= 0)) { setError("Each item needs a quantity above zero."); return; }
     const duplicate = allDocs.find(doc => doc.type === draft.type && doc.id !== draft.id && doc.no === no && (draft.type !== "PUR" || doc.party?.name === draft.party?.name));
-    if (duplicate && !window.confirm(`${type.noLabel} ${no} is already used. Save anyway?`)) return;
+    if (duplicate && !await askConfirm("Duplicate number", `${type.noLabel} ${no} is already used. Save anyway?`, { confirmLabel: "Save anyway" })) return;
     setBusy(true); setError("");
     try {
       let party = draft.party;
@@ -299,14 +306,13 @@ export default function BillingApp() {
       const backup: unknown = JSON.parse(await file.text());
       if (!backup || typeof backup !== "object" || (backup as { app?: string }).app !== "rsf-billing") throw new Error("That file is not a backup from this billing app.");
       const count = Object.keys((backup as { docs?: object }).docs || {}).length;
-      if (!window.confirm(`Restore backup with ${count} documents? Matching IDs will be overwritten.`)) return;
+      if (!await askConfirm("Restore backup?", `This backup has ${count} documents. Records with matching IDs will be replaced.`, { confirmLabel: "Restore backup", danger: true })) return;
       const result = await request<{ count: number }>("/api/data", { method: "POST", body: JSON.stringify({ action: "restore", backup }) });
       await loadData(); showNotice(`Backup restored (${result.count} records saved).`);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not restore this backup."); }
   };
   const eraseData = async () => {
-    if (!window.confirm("Erase all invoices, quotations, purchases, customers, items and business settings? Download a backup first. This cannot be undone.")) return;
-    if (!window.confirm("Are you absolutely sure?")) return;
+    if (!await askConfirm("Erase all business data?", "Invoices, quotations, purchases, contacts, items and settings will be permanently erased. Download a backup first.", { confirmLabel: "Erase all data", danger: true })) return;
     await runAction(async () => {
       const response = await request<{ ok: boolean }>("/api/data", { method: "POST", body: JSON.stringify({ action: "reset" }) });
       if (!response.ok) throw new Error("Could not erase saved business data.");
@@ -320,15 +326,17 @@ export default function BillingApp() {
 
   const visibleDocs = tab === "inv" ? allDocs.filter(doc => doc.type === "INV") : tab === "qtn" ? allDocs.filter(doc => doc.type === "QTN") : tab === "pur" ? allDocs.filter(doc => doc.type === "PUR") : [];
   const selectedDoc = openDoc ? docs[openDoc] : undefined;
+  const selectTab = (key: Tab) => { setTab(key); setMobileNavOpen(false); setOpenDoc(null); setDraft(null); setFormRecord(null); setQuery(""); setError(""); };
 
   return <div className="app-shell">
     <header className="topbar">
-      <div className="brand"><div className="brand-mark">RS</div><div><strong>{company.name || "RS Fabrication"}</strong><span>Billing · Quotations · Purchases</span></div></div>
+      <div className="brand"><button className="mobile-menu-toggle" aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(value => !value)}><span>{mobileNavOpen ? "×" : "☰"}</span></button><div className="brand-mark">RS</div><div><strong>{company.name || "RS Fabrication"}</strong><span>Billing · Quotations · Purchases</span></div></div>
       <div className="top-actions"><PwaInstallButton /><span className="signed-in">{username}</span><button className="button ghost small" onClick={() => void runAction(signOut)}>Log out</button></div>
     </header>
-    <nav className="navigation">{NAV.map(([key, label, icon]) => <button className={tab === key ? "nav-item active" : "nav-item"} key={key} onClick={() => { setTab(key); setOpenDoc(null); setDraft(null); setFormRecord(null); setQuery(""); setError(""); }}><span>{icon}</span>{label}</button>)}</nav>
+    <nav className="navigation">{NAV.map(([key, label, icon]) => <button className={tab === key ? "nav-item active" : "nav-item"} key={key} onClick={() => selectTab(key)}><span>{icon}</span>{label}</button>)}</nav>
+    {mobileNavOpen && <div className="mobile-drawer-scrim" onMouseDown={event => { if (event.target === event.currentTarget) setMobileNavOpen(false); }}><aside className="mobile-drawer" aria-label="Main navigation"><div className="drawer-heading"><div className="brand-mark">RS</div><div><strong>{company.name || "RS Fabrication"}</strong><span>Billing workspace</span></div><button aria-label="Close navigation" onClick={() => setMobileNavOpen(false)}>×</button></div><nav>{NAV.map(([key, label, icon]) => <button className={tab === key ? "drawer-item active" : "drawer-item"} key={key} onClick={() => selectTab(key)}><span>{icon}</span>{label}{tab === key && <i>●</i>}</button>)}</nav><div className="drawer-account">Signed in as <strong>{username}</strong></div></aside></div>}
     <main className="content">
-      {error && <div className="notice error"><span>{error}</span><button aria-label="Dismiss" onClick={() => setError("")}>×</button></div>}
+      {error && <div className="notice error" role="alert"><span>{error}</span><button aria-label="Dismiss" onClick={() => setError("")}>×</button></div>}
       {notice && <div className="notice success">{notice}</div>}
       {draft ? <DocumentEditor
         draft={draft} setDraft={setDraft} company={company} parties={allParties} items={allItems} partyDraft={partyDraft}
@@ -347,7 +355,7 @@ export default function BillingApp() {
         }}
       /> : selectedDoc ? <DocumentView
         doc={selectedDoc} company={company} onBack={() => setOpenDoc(null)} onEdit={() => beginEdit(selectedDoc)}
-        onDelete={() => { if (window.confirm(`Delete ${TYPES[selectedDoc.type].short.toLowerCase()} ${selectedDoc.no}? This cannot be undone.`)) void runAction(async () => { await deleteRecord("docs", selectedDoc.id); setOpenDoc(null); }, "Document deleted."); }}
+        onDelete={() => void askConfirm("Delete document?", `Delete ${TYPES[selectedDoc.type].short.toLowerCase()} ${selectedDoc.no}? This cannot be undone.`, { confirmLabel: "Delete", danger: true }).then(yes => { if (yes) void runAction(async () => { await deleteRecord("docs", selectedDoc.id); setOpenDoc(null); }, "Document deleted."); })}
         onDuplicate={() => {
           const duplicate: Doc = {
             ...selectedDoc, id: makeId("d"),
@@ -369,6 +377,7 @@ export default function BillingApp() {
           setTab("inv"); setReturnDocId(selectedDoc.id); setDraft(converted); setPartyDraft(null);
         }}
         onPayment={() => setPaymentDraft({ docId: selectedDoc.id, date: today(), amount: String(calc(selectedDoc).balance), mode: "Bank transfer", ref: "" })}
+        askConfirm={askConfirm}
         onRemovePayment={index => void runAction(async () => {
           const payments = [...(selectedDoc.payments || [])]; payments.splice(index, 1);
           await saveRecord("docs", selectedDoc.id, { ...selectedDoc, payments, updated: Date.now() });
@@ -393,6 +402,8 @@ export default function BillingApp() {
           onBackup={downloadBackup} onRestore={file => void restoreBackup(file)} onErase={() => void eraseData()}
         />}
     </main>
+    {notice && <div className="toast success" role="status" aria-live="polite"><span className="toast-check">✓</span>{notice}<button aria-label="Dismiss notification" onClick={() => setNotice("")}>×</button></div>}
+    {confirmDialog && <div className="dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) { confirmDialog.resolve(false); setConfirmDialog(null); } }}><section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message"><span className="confirm-icon">{confirmDialog.danger ? "!" : "?"}</span><h2 id="confirm-title">{confirmDialog.title}</h2><p id="confirm-message">{confirmDialog.message}</p><div className="confirm-actions"><button className="button" onClick={() => { confirmDialog.resolve(false); setConfirmDialog(null); }}>Cancel</button><button className={`button ${confirmDialog.danger ? "danger" : "primary"}`} onClick={() => { confirmDialog.resolve(true); setConfirmDialog(null); }}>{confirmDialog.confirmLabel || "Continue"}</button></div></section></div>}
   </div>;
 }
 
@@ -470,9 +481,9 @@ function DocumentList({ tab, docs, query, setQuery, onNew, onOpen }: {
   </div>;
 }
 
-function DocumentView({ doc, company, onBack, onEdit, onDelete, onDuplicate, onToggleCancelled, onConvert, onPayment, onRemovePayment }: {
+function DocumentView({ doc, company, onBack, onEdit, onDelete, onDuplicate, onToggleCancelled, onConvert, onPayment, onRemovePayment, askConfirm }: {
   doc: Doc; company: Company; onBack: () => void; onEdit: () => void; onDelete: () => void; onDuplicate: () => void;
-  onToggleCancelled: () => void; onConvert: () => void; onPayment: () => void; onRemovePayment: (index: number) => void;
+  onToggleCancelled: () => void; onConvert: () => void; onPayment: () => void; onRemovePayment: (index: number) => void; askConfirm: (title: string, message: string, options?: { confirmLabel?: string; danger?: boolean }) => Promise<boolean>;
 }) {
   const totals = calc(doc), type = TYPES[doc.type], [status, tone] = documentStatus(doc);
   return <div className="page-stack">
@@ -487,7 +498,7 @@ function DocumentView({ doc, company, onBack, onEdit, onDelete, onDuplicate, onT
       </div>
     </div>
     {(doc.payments || []).length > 0 && <section className="panel"><div className="section-heading"><div><h2>Payments</h2><p className="muted">Received / paid against this document</p></div></div>
-      <div className="payment-list">{doc.payments?.map((payment, index) => <div className="payment-row" key={`${payment.date}-${index}`}><span>{displayDate(payment.date)} · {payment.mode || "Payment"}{payment.ref ? ` · ${payment.ref}` : ""}</span><strong>{money(payment.amount)}</strong><button className="text-button" onClick={() => { if (window.confirm("Remove this payment entry?")) onRemovePayment(index); }}>Remove</button></div>)}</div>
+      <div className="payment-list">{doc.payments?.map((payment, index) => <div className="payment-row" key={`${payment.date}-${index}`}><span>{displayDate(payment.date)} · {payment.mode || "Payment"}{payment.ref ? ` · ${payment.ref}` : ""}</span><strong>{money(payment.amount)}</strong><button className="text-button" onClick={() => void askConfirm("Remove payment?", "This payment entry will be removed from the document.", { confirmLabel: "Remove", danger: true }).then(yes => { if (yes) onRemovePayment(index); })}>Remove</button></div>)}</div>
     </section>}
     <InvoicePaper doc={doc} company={company} />
   </div>;
@@ -617,7 +628,7 @@ function DocumentEditor({ draft, setDraft, company, parties, items, partyDraft, 
     <section className="panel editor-section"><div className="form-grid two">{draft.type !== "PUR" && <Field label="Terms and conditions"><textarea rows={6} value={draft.terms || ""} onChange={event => update("terms", event.target.value)} /></Field>}<Field label="Notes (optional)"><textarea rows={3} value={draft.notes || ""} onChange={event => update("notes", event.target.value)} /></Field>
       {!draft.created && draft.type !== "QTN" && <Field label={draft.type === "PUR" ? "Paid now (₹)" : "Received now (₹)"}><input type="number" min="0" step="any" value={paidNow} onChange={event => setPaidNow(event.target.value)} /></Field>}</div>
     </section>
-    <div className="sticky-actions"><span className="muted">{draft.lines.length} item(s) · {money(totals.total)}</span><div><button className="button" onClick={onCancel}>Cancel</button><button className="button primary" onClick={onSave} disabled={busy}>{busy ? "Saving…" : `Save ${type.short.toLowerCase()}`}</button></div></div>
+    <div className="sticky-actions"><span className="muted">{draft.lines.length} item(s) · {money(totals.total)}</span><div><button className="button" onClick={onCancel} disabled={busy}>Cancel</button><button className="button primary" onClick={onSave} disabled={busy}>{busy ? <><span className="button-spinner" />Saving…</> : `Save ${type.short.toLowerCase()}`}</button></div></div>
   </div>;
 }
 
@@ -670,6 +681,7 @@ function RecordEditor({ initial, onCancel, onSave, onDelete }: {
 }) {
   const [record, setRecord] = useState<Party | Item>({ ...initial });
   const [busy, setBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [formError, setFormError] = useState("");
   const isParty = "role" in record;
   const change = (key: string, value: string | number) => setRecord(current => ({ ...current, [key]: value }));
@@ -684,10 +696,12 @@ function RecordEditor({ initial, onCancel, onSave, onDelete }: {
     finally { setBusy(false); }
   };
   const remove = async () => {
-    if (!window.confirm(`Delete ${record.name}? Existing bills keep their saved copy.`)) return;
+    setConfirmOpen(false);
     setFormError("");
+    setBusy(true);
     try { await onDelete(record); }
     catch (cause) { setFormError(cause instanceof Error ? cause.message : "Could not delete this record."); }
+    finally { setBusy(false); }
   };
   return <div className="page-stack narrow"><button className="back-link" onClick={onCancel}>← Back</button><PageHeading title={`${isParty ? "Contact" : "Item"} details`} subtitle="Keep saved details up to date for future bills." />
     <section className="panel editor-section"><div className="form-grid two">
@@ -710,7 +724,8 @@ function RecordEditor({ initial, onCancel, onSave, onDelete }: {
         <Field label="Rate (₹)"><input type="number" min="0" step="any" value={(record as Item).rate} onChange={event => change("rate", number(event.target.value))} /></Field>
         <Field label="GST %"><select value={(record as Item).gst} onChange={event => change("gst", number(event.target.value))}>{GST_RATES.map(rate => <option key={rate}>{rate}</option>)}</select></Field>
       </>}
-    </div>{formError && <div className="notice error">{formError}</div>}<div className="form-actions"><button className="button danger" onClick={() => void remove()}>Delete</button><span className="grow" /><button className="button" onClick={onCancel}>Cancel</button><button className="button primary" disabled={busy || !record.name.trim()} onClick={() => void submit()}>{busy ? "Saving…" : "Save"}</button></div></section>
+    </div>{formError && <div className="notice error">{formError}</div>}<div className="form-actions"><button className="button danger" disabled={busy} onClick={() => setConfirmOpen(true)}>{busy ? <><span className="button-spinner" />Deleting…</> : "Delete"}</button><span className="grow" /><button className="button" disabled={busy} onClick={onCancel}>Cancel</button><button className="button primary" disabled={busy || !record.name.trim()} onClick={() => void submit()}>{busy ? <><span className="button-spinner" />Saving…</> : "Save"}</button></div></section>
+    {confirmOpen && <div className="dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setConfirmOpen(false); }}><section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="record-delete-title"><span className="confirm-icon">!</span><h2 id="record-delete-title">Delete {isParty ? "contact" : "item"}?</h2><p>Delete {record.name}? Existing bills keep their saved copy.</p><div className="confirm-actions"><button className="button" onClick={() => setConfirmOpen(false)}>Cancel</button><button className="button danger" onClick={() => void remove()}>Delete</button></div></section></div>}
   </div>;
 }
 

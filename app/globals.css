@@ -172,6 +172,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   box-shadow: 0 2px 10px rgb(249 115 22 / 20%);
 }
 .nav-item.active > span { color: #f97316; }
+.mobile-menu-toggle { display: none; }
+.mobile-drawer-scrim { display: none; }
 
 /* Main Content Area */
 .content { width: min(1200px, calc(100% - 48px)); min-height: calc(100vh - 170px); margin: 0 auto; padding: 32px 0 60px; }
@@ -411,6 +413,19 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .auth-card .tiny { margin-bottom: 0; }
 .loading-card { display: grid; width: 100px; height: 100px; place-items: center; padding: 0; border: 0; background: transparent; box-shadow: none; }
 .loading-spinner { width: 56px; height: 56px; border: 4px solid #fed7aa; border-top-color: #ea580c; border-right-color: #ea580c; border-radius: 50%; animation: loading-spin .75s linear infinite; }
+.button-spinner { display: inline-block; width: 14px; height: 14px; margin-right: 7px; vertical-align: -2px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: loading-spin .7s linear infinite; }
+.dialog-backdrop { position: fixed; z-index: 80; inset: 0; display: grid; place-items: center; padding: 20px; background: rgb(15 23 42 / 48%); backdrop-filter: blur(5px); animation: dialog-fade .16s ease-out; }
+.confirm-dialog { width: min(420px, 100%); padding: 26px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 0 24px 70px rgb(15 23 42 / 28%); animation: dialog-rise .2s ease-out; }
+.confirm-icon { display: grid; width: 42px; height: 42px; place-items: center; margin-bottom: 16px; border-radius: 13px; background: #fff7ed; color: #c2410c; font-size: 20px; font-weight: 800; }
+.confirm-dialog h2 { margin: 0; font-size: 19px; letter-spacing: -.025em; }
+.confirm-dialog p { margin: 9px 0 24px; color: var(--muted); font-size: 13px; line-height: 1.65; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 9px; }
+.toast { position: fixed; z-index: 70; right: 24px; bottom: 24px; display: flex; align-items: center; gap: 10px; width: max-content; max-width: min(440px, calc(100vw - 32px)); padding: 12px 14px; border: 1px solid #a7f3d0; border-radius: 12px; background: #fff; color: #065f46; box-shadow: var(--shadow-lg); font-size: 13px; font-weight: 600; animation: toast-in .22s ease-out; }
+.toast-check { display: grid; width: 22px; height: 22px; flex: 0 0 22px; place-items: center; border-radius: 50%; background: #d1fae5; font-weight: 800; }
+.toast button { margin-left: auto; padding: 0 2px 0 8px; border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 20px; }
+@keyframes dialog-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dialog-rise { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes loading-spin { to { transform: rotate(360deg); } }
 
 /* Form Fields & Controls */
@@ -566,30 +581,26 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   .db-status { font-size: 0; padding: 6px; }
   .db-status i { width: 8px; height: 8px; }
   .signed-in { display: none; }
-  .navigation {
-    position: sticky;
-    top: 0;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 5px;
-    min-height: 0;
-    padding: 8px 10px;
-    overflow: visible;
-  }
-  .nav-item {
-    min-width: 0;
-    min-height: 48px;
-    flex-direction: column;
-    justify-content: center;
-    gap: 2px;
-    padding: 4px 2px;
-    border-radius: 7px;
-    font-size: 10px;
-    line-height: 1.15;
-    text-align: center;
-    white-space: normal;
-  }
-  .nav-item > span { font-size: 16px; line-height: 1; }
+  .brand { gap: 9px; }
+  .mobile-menu-toggle { display: grid; width: 40px; height: 40px; flex: 0 0 40px; place-items: center; padding: 0; border: 1px solid rgb(255 255 255 / 13%); border-radius: 11px; background: rgb(255 255 255 / 6%); color: #f8fafc; cursor: pointer; }
+  .mobile-menu-toggle span { font-size: 21px; line-height: 1; }
+  .navigation { display: none; }
+  .mobile-drawer-scrim { position: fixed; z-index: 60; inset: 0; display: block; background: rgb(2 6 23 / 55%); backdrop-filter: blur(3px); animation: dialog-fade .16s ease-out; }
+  .mobile-drawer { position: absolute; inset: 0 auto 0 0; display: flex; width: min(320px, calc(100vw - 52px)); flex-direction: column; padding: max(18px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)); background: #0d1527; color: #f8fafc; box-shadow: 16px 0 50px rgb(2 6 23 / 30%); animation: drawer-in .2s ease-out; }
+  .drawer-heading { display: flex; align-items: center; gap: 11px; padding: 4px 5px 20px; border-bottom: 1px solid rgb(255 255 255 / 10%); }
+  .drawer-heading > div:nth-child(2) { min-width: 0; flex: 1; }
+  .drawer-heading strong, .drawer-heading span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .drawer-heading strong { font-size: 13px; }
+  .drawer-heading span { margin-top: 3px; color: #94a3b8; font-size: 11px; }
+  .drawer-heading > button { width: 38px; height: 38px; border: 0; border-radius: 10px; background: rgb(255 255 255 / 7%); color: #cbd5e1; font-size: 24px; cursor: pointer; }
+  .mobile-drawer nav { display: grid; gap: 4px; padding-top: 14px; }
+  .drawer-item { display: flex; align-items: center; gap: 13px; min-height: 49px; padding: 0 13px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #cbd5e1; text-align: left; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .drawer-item > span { width: 23px; color: #94a3b8; font-size: 18px; text-align: center; }
+  .drawer-item.active { border-color: rgb(249 115 22 / 28%); background: rgb(249 115 22 / 14%); color: #ffedd5; }
+  .drawer-item.active > span { color: #fb923c; }
+  .drawer-item i { margin-left: auto; color: #fb923c; font-size: 8px; }
+  .drawer-account { display: flex; flex-direction: column; gap: 3px; margin-top: auto; padding: 15px 12px 4px; border-top: 1px solid rgb(255 255 255 / 10%); color: #94a3b8; font-size: 11px; }
+  .drawer-account strong { color: #e2e8f0; font-size: 12px; }
   .content { width: calc(100% - 28px); padding: 24px 0 40px; }
   .quick-actions { grid-template-columns: 1fr; gap: 10px; }
   .quick-actions > button { padding: 14px 16px; }
@@ -625,6 +636,22 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   .gst-summary-cards { grid-template-columns: 1fr; padding: 14px; }
   .notice { align-items: flex-start; }
   .install-button { min-height: 32px; padding: 0 10px; font-size: 11px; }
+  .confirm-dialog { align-self: end; width: 100%; padding: 24px 20px max(20px, env(safe-area-inset-bottom)); border-radius: 22px 22px 14px 14px; }
+  .confirm-actions { flex-direction: column-reverse; }
+  .confirm-actions .button { min-height: 46px; width: 100%; }
+  .toast { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; width: auto; max-width: none; min-height: 48px; }
+}
+@keyframes drawer-in { from { opacity: .7; transform: translateX(-14px); } to { opacity: 1; transform: translateX(0); } }
+@media (pointer: coarse) {
+  .button, .nav-item, .text-button, .segmented button { min-height: 44px; }
+}
+@media (prefers-color-scheme: dark) {
+  .dialog-backdrop { background: rgb(2 6 23 / 68%); }
+  .confirm-dialog, .toast { background: #111827; border-color: #334155; color: #e2e8f0; }
+  .confirm-dialog p { color: #a8b4c5; }
+  .confirm-icon { background: rgb(249 115 22 / 15%); color: #fdba74; }
+  .toast.success { border-color: #166534; }
+  .toast-check { background: #14532d; color: #bbf7d0; }
 }
 @media (max-width: 420px) {
   .brand strong { max-width: 44vw; font-size: 13.5px; }
