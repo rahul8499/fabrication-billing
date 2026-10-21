@@ -582,6 +582,11 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   .db-status i { width: 8px; height: 8px; }
   .signed-in { display: none; }
   .brand { gap: 9px; }
+  .topbar { min-width: 0; gap: 8px; }
+  .brand > div:last-child { min-width: 0; flex: 1 1 auto; }
+  .brand strong { max-width: 100%; }
+  .brand span { display: none; }
+  .top-actions { flex: 0 0 auto; gap: 6px; }
   .mobile-menu-toggle { display: grid; width: 40px; height: 40px; flex: 0 0 40px; place-items: center; padding: 0; border: 1px solid rgb(255 255 255 / 13%); border-radius: 11px; background: rgb(255 255 255 / 6%); color: #f8fafc; cursor: pointer; }
   .mobile-menu-toggle span { font-size: 21px; line-height: 1; }
   .navigation { display: none; }
@@ -654,9 +659,10 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   .toast-check { background: #14532d; color: #bbf7d0; }
 }
 @media (max-width: 420px) {
-  .brand strong { max-width: 44vw; font-size: 13.5px; }
+  .brand { flex: 1 1 0; }
+  .brand strong { max-width: 100%; font-size: 13px; }
   .brand-mark { width: 36px; height: 36px; flex-basis: 36px; }
-  .top-actions .button { min-height: 32px; padding: 0 9px; }
+  .top-actions .button { min-height: 32px; padding: 0 7px; font-size: 10.5px; }
   .metric-grid, .metric-grid.compact { grid-template-columns: 1fr 1fr; }
   .metric-top { font-size: 10.5px; }
   .form-grid.six { grid-template-columns: 1fr 1fr; }

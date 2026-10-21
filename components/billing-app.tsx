@@ -384,6 +384,7 @@ export default function BillingApp() {
         }, "Payment entry removed.")}
       /> : paymentDraft ? <PaymentEditor
         draft={paymentDraft} setDraft={setPaymentDraft}
+        busy={busy}
         onCancel={() => setPaymentDraft(null)}
         onSave={() => void runAction(async () => {
           const original = docs[paymentDraft.docId]; if (!original) throw new Error("Document not found.");
@@ -396,7 +397,7 @@ export default function BillingApp() {
         tab === "parties" ? <PartyList parties={allParties} docs={allDocs} query={query} setQuery={setQuery} onAdd={() => setFormRecord({ id: makeId("p"), role: "customer", name: "", address: "", gstin: "", pan: "", phone: "", email: "", state: "" })} onOpen={id => { if (parties[id]) setFormRecord({ ...parties[id] }); }} /> :
         tab === "items" ? <ItemList items={allItems} query={query} setQuery={setQuery} onAdd={() => setFormRecord({ id: makeId("i"), name: "", desc: "", hsn: "", unit: "PCS", rate: 0, gst: 18 })} onOpen={id => { if (items[id]) setFormRecord({ ...items[id] }); }} /> :
         tab === "gst" && gstReport && period ? <GSTPage company={company} report={gstReport} period={period} periodType={periodType} setPeriodType={value => { setPeriodType(value); setPeriodKey(""); }} setPeriodKey={setPeriodKey} subTab={subTab} setSubTab={setSubTab} /> :
-        <SettingsPage
+        <SettingsPage busy={busy}
           company={company} username={username} lastBackup={lastBackup} documentCount={allDocs.length} partyCount={allParties.length} itemCount={allItems.length}
           onSave={value => void runAction(async () => { await saveRecord("company", "company", { ...value, updated: Date.now() }); }, "Settings saved.")}
           onBackup={downloadBackup} onRestore={file => void restoreBackup(file)} onErase={() => void eraseData()}
@@ -636,14 +637,14 @@ function Field({ label, children, wide = false }: { label: string; children: Rea
   return <label className={`field${wide ? " span-two" : ""}`}><span>{label}</span>{children}</label>;
 }
 
-function PaymentEditor({ draft, setDraft, onCancel, onSave }: {
+function PaymentEditor({ draft, setDraft, onCancel, onSave, busy }: {
   draft: { docId: string; date: string; amount: string; mode: string; ref: string };
   setDraft: (draft: { docId: string; date: string; amount: string; mode: string; ref: string }) => void;
-  onCancel: () => void; onSave: () => void;
+  onCancel: () => void; onSave: () => void; busy: boolean;
 }) {
   const change = (key: "date" | "amount" | "mode" | "ref", value: string) => setDraft({ ...draft, [key]: value });
   return <div className="page-stack narrow"><button className="back-link" onClick={onCancel}>← Back to document</button><PageHeading title="Record payment" subtitle="Add payment details to update the outstanding balance." />
-    <section className="panel editor-section"><div className="form-grid two"><Field label="Date"><input type="date" value={draft.date} onChange={event => change("date", event.target.value)} /></Field><Field label="Amount (₹)"><input type="number" min="0.01" step="any" value={draft.amount} onChange={event => change("amount", event.target.value)} /></Field><Field label="Mode"><select value={draft.mode} onChange={event => change("mode", event.target.value)}>{["Bank transfer","UPI","Cheque","Cash","NEFT/RTGS"].map(mode => <option key={mode}>{mode}</option>)}</select></Field><Field label="Reference"><input placeholder="UTR / cheque number" value={draft.ref} onChange={event => change("ref", event.target.value)} /></Field></div><div className="form-actions"><button className="button" onClick={onCancel}>Cancel</button><button className="button primary" onClick={onSave}>Save payment</button></div></section>
+    <section className="panel editor-section"><form onSubmit={event => { event.preventDefault(); if (Number(draft.amount) > 0) onSave(); }}><div className="form-grid two"><Field label="Date"><input required type="date" value={draft.date} onChange={event => change("date", event.target.value)} /></Field><Field label="Amount (₹)"><input required type="number" min="0.01" step="any" value={draft.amount} onChange={event => change("amount", event.target.value)} /></Field><Field label="Mode"><select value={draft.mode} onChange={event => change("mode", event.target.value)}>{["Bank transfer","UPI","Cheque","Cash","NEFT/RTGS"].map(mode => <option key={mode}>{mode}</option>)}</select></Field><Field label="Reference"><input placeholder="UTR / cheque number" value={draft.ref} onChange={event => change("ref", event.target.value)} /></Field></div><div className="form-actions"><button className="button" type="button" disabled={busy} onClick={onCancel}>Cancel</button><button className="button primary" type="submit" disabled={busy}>{busy ? <><span className="button-spinner" />Saving…</> : "Save payment"}</button></div></form></section>
   </div>;
 }
 
@@ -704,7 +705,7 @@ function RecordEditor({ initial, onCancel, onSave, onDelete }: {
     finally { setBusy(false); }
   };
   return <div className="page-stack narrow"><button className="back-link" onClick={onCancel}>← Back</button><PageHeading title={`${isParty ? "Contact" : "Item"} details`} subtitle="Keep saved details up to date for future bills." />
-    <section className="panel editor-section"><div className="form-grid two">
+    <section className="panel editor-section"><form onSubmit={event => { event.preventDefault(); void submit(); }}><div className="form-grid two">
       <Field label={isParty ? "Name" : "Item name"} wide><input autoFocus value={record.name} onChange={event => change("name", event.target.value)} /></Field>
       {isParty ? <>
         <Field label="Type"><select value={(record as Party).role} onChange={event => change("role", event.target.value)}>{[["customer","Customer"],["supplier","Supplier"],["both","Both"]].map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select></Field>
@@ -724,33 +725,36 @@ function RecordEditor({ initial, onCancel, onSave, onDelete }: {
         <Field label="Rate (₹)"><input type="number" min="0" step="any" value={(record as Item).rate} onChange={event => change("rate", number(event.target.value))} /></Field>
         <Field label="GST %"><select value={(record as Item).gst} onChange={event => change("gst", number(event.target.value))}>{GST_RATES.map(rate => <option key={rate}>{rate}</option>)}</select></Field>
       </>}
-    </div>{formError && <div className="notice error">{formError}</div>}<div className="form-actions"><button className="button danger" disabled={busy} onClick={() => setConfirmOpen(true)}>{busy ? <><span className="button-spinner" />Deleting…</> : "Delete"}</button><span className="grow" /><button className="button" disabled={busy} onClick={onCancel}>Cancel</button><button className="button primary" disabled={busy || !record.name.trim()} onClick={() => void submit()}>{busy ? <><span className="button-spinner" />Saving…</> : "Save"}</button></div></section>
+    </div>{formError && <div className="notice error">{formError}</div>}<div className="form-actions"><button className="button danger" type="button" disabled={busy} onClick={() => setConfirmOpen(true)}>{busy ? <><span className="button-spinner" />Deleting…</> : "Delete"}</button><span className="grow" /><button className="button" type="button" disabled={busy} onClick={onCancel}>Cancel</button><button className="button primary" type="submit" disabled={busy || !record.name.trim()}>{busy ? <><span className="button-spinner" />Saving…</> : "Save"}</button></div></form></section>
     {confirmOpen && <div className="dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setConfirmOpen(false); }}><section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="record-delete-title"><span className="confirm-icon">!</span><h2 id="record-delete-title">Delete {isParty ? "contact" : "item"}?</h2><p>Delete {record.name}? Existing bills keep their saved copy.</p><div className="confirm-actions"><button className="button" onClick={() => setConfirmOpen(false)}>Cancel</button><button className="button danger" onClick={() => void remove()}>Delete</button></div></section></div>}
   </div>;
 }
 
-function SettingsPage({ company, username, lastBackup, documentCount, partyCount, itemCount, onSave, onBackup, onRestore, onErase }: {
-  company: Company; username: string; lastBackup: string; documentCount: number; partyCount: number; itemCount: number; onSave: (company: Company) => void; onBackup: () => void; onRestore: (file?: File) => void; onErase: () => void;
+function SettingsPage({ company, username, lastBackup, documentCount, partyCount, itemCount, onSave, onBackup, onRestore, onErase, busy }: {
+  company: Company; username: string; lastBackup: string; documentCount: number; partyCount: number; itemCount: number; onSave: (company: Company) => void; onBackup: () => void; onRestore: (file?: File) => void; onErase: () => void; busy: boolean;
 }) {
   const year = todayFy();
   const [draft, setDraft] = useState<Company>({ ...company });
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
   const change = (key: keyof Company, value: string | number) => setDraft(current => ({ ...current, [key]: value }));
   const changePassword = async () => {
-    setPasswordMessage("");
+    setPasswordMessage(""); setPasswordBusy(true);
     try {
       await request("/api/auth", { method: "POST", body: JSON.stringify({ action: "change-password", username, currentPassword: oldPassword, password: newPassword }) });
       setPasswordMessage("Password changed. Please log in again."); setOldPassword(""); setNewPassword("");
       window.setTimeout(() => window.location.reload(), 1500);
     } catch (cause) { setPasswordMessage(cause instanceof Error ? cause.message : "Could not change password."); }
+    finally { setPasswordBusy(false); }
   };
   const fields: Array<[keyof Company, string]> = [
     ["name","Business name"],["address","Address"],["mobile","Mobile"],["email","Email"],["gstin","GSTIN"],["pan","PAN"],["state","State"],["stateCode","State code"],["udyam","Udyam registration no."],
   ];
   return <div className="page-stack">
     <PageHeading title="Settings" subtitle="Business profile, invoice defaults, account security and data protection." />
+    <form onSubmit={event => { event.preventDefault(); onSave(draft); }}>
     <section className="panel editor-section"><div className="section-heading"><div><h2>Business details</h2><p className="muted">These details appear on invoices and quotations.</p></div></div><div className="form-grid two">
       {fields.map(([key, label]) => <Field label={label} wide={key === "address"} key={key}>{key === "address" ? <textarea rows={3} value={draft[key]} onChange={event => change(key, event.target.value)} /> : <input value={draft[key]} onChange={event => change(key, event.target.value)} />}</Field>)}
     </div></section>
@@ -763,8 +767,9 @@ function SettingsPage({ company, username, lastBackup, documentCount, partyCount
       <Field label="Quotation valid for (days)"><input type="number" min="0" value={draft.qtnValidDays} onChange={event => change("qtnValidDays", number(event.target.value))} /></Field>
     </div><p className="muted tiny">Remember to update the financial-year prefix on 1 April. Current financial year: {year}–{String(year + 1).slice(2)}.</p></section>
     <section className="panel editor-section"><div className="section-heading"><div><h2>Terms and conditions</h2><p className="muted">Default text added to new invoices and quotations.</p></div></div><div className="form-grid two"><Field label="Invoice terms"><textarea rows={8} value={draft.terms} onChange={event => change("terms", event.target.value)} /></Field><Field label="Quotation terms"><textarea rows={8} value={draft.qtnTerms} onChange={event => change("qtnTerms", event.target.value)} /></Field></div></section>
-    <div className="settings-save"><button className="button primary" onClick={() => onSave(draft)}>Save settings</button></div>
-    <section className="panel editor-section"><div className="section-heading"><div><h2>Login security</h2><p className="muted">Signed in as {username}. Password is stored as a hash, never as plain text.</p></div></div><div className="form-grid two"><Field label="Current password"><input type="password" autoComplete="current-password" value={oldPassword} onChange={event => setOldPassword(event.target.value)} /></Field><Field label="New password (at least 12 characters)"><input type="password" minLength={12} autoComplete="new-password" value={newPassword} onChange={event => setNewPassword(event.target.value)} /></Field></div><div className="form-actions"><button className="button" disabled={newPassword.length < 12 || !oldPassword} onClick={() => void changePassword()}>Change password</button>{passwordMessage && <span className="muted">{passwordMessage}</span>}</div></section>
+    <div className="settings-save"><button className="button primary" type="submit" disabled={busy}>{busy ? <><span className="button-spinner" />Saving…</> : "Save settings"}</button></div>
+    </form>
+    <section className="panel editor-section"><div className="section-heading"><div><h2>Login security</h2><p className="muted">Signed in as {username}. Password is stored as a hash, never as plain text.</p></div></div><form onSubmit={event => { event.preventDefault(); void changePassword(); }}><div className="form-grid two"><Field label="Current password"><input required type="password" autoComplete="current-password" value={oldPassword} onChange={event => setOldPassword(event.target.value)} /></Field><Field label="New password (at least 12 characters)"><input required type="password" minLength={12} autoComplete="new-password" value={newPassword} onChange={event => setNewPassword(event.target.value)} /></Field></div><div className="form-actions"><button className="button" type="submit" disabled={passwordBusy || newPassword.length < 12 || !oldPassword}>{passwordBusy && <span className="button-spinner" />}{passwordBusy ? "Changing password…" : "Change password"}</button>{passwordMessage && <span className="muted" role="status">{passwordMessage}</span>}</div></form></section>
     <section className="panel editor-section"><div className="section-heading"><div><h2>Saved business data</h2><p className="muted">Your bills, contacts, items and company settings are securely saved.</p></div></div><div className="metric-grid compact"><Metric label="Documents" value={String(documentCount)} note="Saved records" icon="▤" /><Metric label="Customers & suppliers" value={String(partyCount)} note="Saved records" icon="♙" /><Metric label="Items" value={String(itemCount)} note="Saved records" icon="▦" /><Metric label="Last backup" value={lastBackup ? displayDate(lastBackup) : "Not downloaded yet"} note="Download a copy regularly" icon="↓" /></div></section>
     <section className="panel editor-section"><div className="section-heading"><div><h2>Backup and restore</h2><p className="muted">Export all records as JSON or restore from a previous RS Fabrication Billing backup.</p></div></div><div className="action-wrap"><button className="button" onClick={onBackup}>Download backup</button><label className="button file-button">Restore from backup<input type="file" accept=".json,application/json" hidden onChange={event => { onRestore(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label><button className="button danger" onClick={onErase}>Erase all data</button></div><p className="muted tiny">To move data from the old HTML app: open its Settings, download a backup JSON, then restore that file here.</p></section>
   </div>;
