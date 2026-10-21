@@ -135,15 +135,15 @@ function LoginPanel({ initialized, onLogin, busy, error }: {
   const [password, setPassword] = useState("");
   return <main className="auth-shell">
     <form className="auth-card panel" onSubmit={event => { event.preventDefault(); void onLogin(username, password); }}>
-      <div className="brand-mark">RS</div>
-      <p className="eyebrow">RS FABRICATION</p>
+      <div className="auth-brand"><div className="brand-mark">RS</div><div><strong>RS Fabrication</strong><span>Billing workspace</span></div><span className="auth-lock" aria-label="Secure sign in">◆</span></div>
+      <p className="eyebrow">{initialized ? "SECURE ACCESS" : "ACCOUNT SETUP"}</p>
       <h1>{initialized ? "Welcome back" : "Create your admin login"}</h1>
-      <p className="muted">{initialized ? "Sign in to securely access your billing data." : "This private account protects all saved bills and business data."}</p>
-      <label className="field"><span>Username</span><input required autoComplete="username" value={username} onChange={event => setUsername(event.target.value)} /></label>
-      <label className="field"><span>Password</span><input required minLength={12} type="password" autoComplete={initialized ? "current-password" : "new-password"} value={password} onChange={event => setPassword(event.target.value)} /><small>Use at least 12 characters.</small></label>
-      {error && <div className="notice error">{error}</div>}
-      <button className="button primary full" disabled={busy}>{busy ? "Please wait…" : initialized ? "Log in" : "Create secure account"}</button>
-      {!initialized && <p className="muted tiny">Only the first account can be created. Keep this password safe.</p>}
+      <p className="auth-intro">{initialized ? "Sign in to manage your invoices, purchases and GST records." : "Set up the secure account for your business workspace."}</p>
+      <label className="field"><span>Username</span><input required autoComplete="username" autoCapitalize="none" value={username} onChange={event => setUsername(event.target.value)} placeholder="Enter your username" /></label>
+      <label className="field"><span>Password</span><input required minLength={12} type="password" autoComplete={initialized ? "current-password" : "new-password"} value={password} onChange={event => setPassword(event.target.value)} placeholder={initialized ? "Enter your password" : "At least 12 characters"} />{!initialized && <small>Use at least 12 characters.</small>}</label>
+      {error && <div className="notice error" role="alert">{error}</div>}
+      <button className="button primary full" disabled={busy}>{busy && <span className="button-spinner" />}{busy ? "Please wait…" : initialized ? "Sign in" : "Create secure account"}<span className="auth-submit-arrow" aria-hidden="true">→</span></button>
+      <div className="auth-footnote"><span>●</span> Your business data is protected with secure sign-in.</div>
     </form>
   </main>;
 }
