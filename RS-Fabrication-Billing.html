@@ -1,0 +1,1278 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>RS Fabrication Billing</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: steel top bar + tab rail; work area of lists, editors and a paper preview of each bill */
+:root{
+  --bg:#eef0f2; --surface:#ffffff; --sunk:#f6f7f8; --ink:#1a1e23; --muted:#5b6570; --line:#d8dce0;
+  --steel:#262d35; --steel-ink:#eef1f4; --red:#c4161c; --red-soft:#fbe9e9; --on-red:#ffffff;
+  --ok:#1f7a45; --ok-soft:#e3f3e9; --warn:#a15c00; --warn-soft:#fbf0dc; --bad:#b3261e; --bad-soft:#fbe4e2;
+  --paper:#ffffff; --paper-ink:#141414; --paper-muted:#555; --paper-band:#e6e6e6; --paper-line:#dddddd; --paper-red:#c4161c;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121518; --surface:#1b2026; --sunk:#161a1f; --ink:#e6e9ec; --muted:#98a2ad; --line:#2d343c;
+  --steel:#0c0f12; --steel-ink:#e6e9ec; --red:#e5484d; --red-soft:#3a1d1f; --on-red:#ffffff;
+  --ok:#5cc58a; --ok-soft:#173326; --warn:#e3a54a; --warn-soft:#352812; --bad:#f07b72; --bad-soft:#3a1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121518; --surface:#1b2026; --sunk:#161a1f; --ink:#e6e9ec; --muted:#98a2ad; --line:#2d343c;
+  --steel:#0c0f12; --steel-ink:#e6e9ec; --red:#e5484d; --red-soft:#3a1d1f; --on-red:#ffffff;
+  --ok:#5cc58a; --ok-soft:#173326; --warn:#e3a54a; --warn-soft:#352812; --bad:#f07b72; --bad-soft:#3a1c1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14.5px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--steel)}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--steel);color:var(--steel-ink)}
+.top .bar{display:flex;align-items:center;gap:12px;padding-block:10px}
+.top img{width:38px;height:40px;object-fit:cover;border-radius:4px}
+.brand{display:flex;flex-direction:column;min-width:0}
+.brand b{font-family:var(--f-display);font-size:22px;letter-spacing:.02em;line-height:1.05;text-transform:uppercase}
+.brand span{font-size:12px;opacity:.7}
+.sync{margin-left:auto;font-size:12px;opacity:.75;white-space:nowrap}
+.sync i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#7c8792;margin-right:6px;vertical-align:1px}
+.sync.on i{background:#4cc27f}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{background:none;border:0;color:var(--steel-ink);opacity:.7;font:600 13px var(--f-body);padding:10px 12px 11px;border-bottom:3px solid transparent;white-space:nowrap;cursor:pointer;letter-spacing:.02em}
+nav.tabs button[aria-current="true"]{opacity:1;border-bottom-color:var(--red)}
+nav.tabs button:hover{opacity:1}
+main{padding-block:20px 60px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;text-wrap:balance;margin:0;text-transform:uppercase}
+h1{font-size:28px} h2{font-size:21px} h3{font-size:16px;letter-spacing:.04em}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{justify-content:space-between}
+.stack{display:flex;flex-direction:column;gap:14px}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 13.5px var(--f-body);padding:8px 13px;border-radius:var(--r);cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--red);border-color:var(--red);color:var(--on-red)}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.pad{padding:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.kpi label{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.kpi .v{font-family:var(--f-mono);font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12px;color:var(--muted)}
+.quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.quick button{text-align:left;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--red);border-radius:var(--r);padding:12px 14px;cursor:pointer;color:var(--ink);font:inherit}
+.quick button b{display:block;font-family:var(--f-display);font-size:18px;text-transform:uppercase;letter-spacing:.02em}
+.quick button span{font-size:12.5px;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+table.list{width:100%;border-collapse:collapse;font-size:13.5px}
+table.list th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.list td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.list tr.click{cursor:pointer}
+table.list tr.click:hover td{background:var(--sunk)}
+table.list .r{text-align:right}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.neu{background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:8px 10px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:60px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f>span{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.span2{grid-column:span 2}
+@media (max-width:720px){.grid2,.grid3,.grid4{grid-template-columns:1fr 1fr}.span2{grid-column:1/-1}}
+@media (max-width:440px){.grid2{grid-template-columns:1fr}}
+.check{display:flex;gap:8px;align-items:center;font-size:13.5px}
+.check input{width:auto}
+.lines{display:flex;flex-direction:column;gap:10px}
+.line{border:1px solid var(--line);border-radius:var(--r);padding:12px;background:var(--sunk);display:flex;flex-direction:column;gap:8px}
+.line-top{display:flex;gap:8px;align-items:center}
+.line-top .ln{font-family:var(--f-mono);font-size:12px;color:var(--muted);width:22px;flex:none}
+.line-grid{display:grid;grid-template-columns:1.1fr .8fr .8fr 1.1fr .9fr 1.2fr;gap:8px;align-items:end}
+@media (max-width:640px){.line-grid{grid-template-columns:1fr 1fr 1fr}}
+.amt{font-family:var(--f-mono);text-align:right;padding:8px 2px;font-variant-numeric:tabular-nums}
+.totals{display:grid;grid-template-columns:auto auto;gap:6px 24px;justify-content:end;font-size:14px}
+.totals .num{text-align:right}
+.totals .grand{font-weight:600;font-size:16px;border-top:1px solid var(--line);padding-top:6px}
+.sticky-actions{position:sticky;bottom:0;background:var(--bg);padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);z-index:5}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-family:var(--f-display);text-transform:uppercase;font-size:18px;margin-bottom:4px}
+.banner{padding:10px 14px;border-radius:var(--r);background:var(--warn-soft);color:var(--warn);font-size:13px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--steel);color:var(--steel-ink);padding:10px 16px;border-radius:var(--r);font-size:13.5px;z-index:50;max-width:calc(100% - 32px)}
+.modal-bg{position:fixed;inset:0;background:rgba(10,12,15,.55);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
+.modal{background:var(--surface);border-radius:var(--r);padding:18px;max-width:440px;width:100%;display:flex;flex-direction:column;gap:12px}
+.search{max-width:280px}
+.dochead{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.paper-wrap{overflow-x:auto;padding-block:4px}
+.paper{background:var(--paper);color:var(--paper-ink);width:794px;min-height:1000px;margin:0 auto;padding:28px 34px;font-family:Roboto,Arial,sans-serif;font-size:12.5px;line-height:1.4;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.paper .tag{display:flex;gap:10px;align-items:center;font-weight:600;font-size:13px}
+.paper .tag em{font-style:normal;font-weight:400;font-size:11.5px;color:#888;border:1px solid #999;padding:1px 6px}
+.paper .co{display:flex;gap:24px;margin:16px 0 14px 12px}
+.paper .co img{width:132px;height:140px;object-fit:cover}
+.paper .co h2{font-family:Roboto,Arial,sans-serif;text-transform:none;color:var(--paper-red);font-size:30px;letter-spacing:0;margin:10px 0 8px}
+.paper .redbar{height:8px;background:var(--paper-red)}
+.paper .band{background:var(--paper-band);display:flex;justify-content:space-between;padding:14px 18px;font-size:13px}
+.paper .parties{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:14px 0 18px}
+.paper .parties h4{font-weight:500;margin:0 0 6px;font-size:13px}
+.paper table{width:100%;border-collapse:collapse}
+.paper th{text-align:right;font-weight:500;padding:12px 10px;border-top:2px solid var(--paper-red);border-bottom:2px solid var(--paper-red);font-size:13px}
+.paper th:first-child,.paper td:first-child{text-align:left}
+.paper td{text-align:right;padding:12px 10px;border-bottom:1px solid var(--paper-line);vertical-align:top}
+.paper td .d{font-size:11px;color:#333;white-space:pre-line}
+.paper tr.sub td{border-top:2px solid var(--paper-red);border-bottom:2px solid var(--paper-red);font-weight:600}
+.paper .foot{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:14px}
+.paper .kv{display:grid;grid-template-columns:120px 1fr;gap:3px 6px}
+.paper .tot{display:grid;grid-template-columns:1fr auto;gap:4px 24px;text-align:right}
+.paper .tot .g{font-weight:700;border-top:1px solid #333;border-bottom:1px solid #333;padding:5px 0}
+.paper .terms{white-space:pre-line;font-size:12px}
+.paper .sign{text-align:right;margin-top:48px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;color:var(--muted);font:600 13px var(--f-body);padding:8px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--steel);color:var(--steel-ink)}
+table.list.gst td{white-space:nowrap}
+table.list.gst tr.ft td{font-weight:600;border-top:2px solid var(--line)}
+.payments{display:flex;flex-direction:column;gap:6px}
+@media print{
+  body{background:#fff} header.top,.noprint,.toast{display:none!important}
+  main{padding:0} .paper{box-shadow:none;width:auto;min-height:0;padding:0} .paper-wrap{overflow:visible}
+  @page{size:A4;margin:12mm}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="top">
+  <div class="gut"><div class="wrap">
+    <div class="bar">
+      <img id="hdrLogo" alt="" src="data:image/jpeg;base64,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">
+      <div class="brand"><b id="hdrName">New R S Fabrication</b><span>Billing · Quotations · Purchases</span></div>
+      <div class="sync" id="sync"><i></i><span>Starting</span></div>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </div></div>
+</header>
+<main class="gut"><div class="wrap" id="main"></div></main>
+<datalist id="itemlist"></datalist>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+const LOGO = document.getElementById('hdrLogo').getAttribute('src');
+const DEFAULT_CO = {
+  name:"New R S Fabrication",
+  address:"Ground, House 662/2, Mauli Nagar, Kamlapur road, Waluj MIDC, Chhatrapati Sambhajinagar, Maharashtra, 431133",
+  mobile:"8806437912", gstin:"27CFXPD4461C1ZC", pan:"CFXPD4461C", email:"Ramdasdeshmukh74427@gmail.com",
+  state:"Maharashtra", stateCode:"27", udyam:"UDYAM-MH-04-0182849",
+  bankName:"M/s NEW R S FABRICATION", ifsc:"MAHG0005138", account:"80091950211", bank:"Maharashtra Gramin Bank, RANJANGAON",
+  invPrefix:"FY2026-27/", qtnPrefix:"QTN/2026-27/", dueDays:7, qtnValidDays:15,
+  terms:"1. Payment Terms:\nPayment is due immediately upon completion of work or as per agreed credit terms.\n2. Udyam Registration Number: UDYAM-MH-04-0182849\n3. Goods and Services:\nThe goods/services provided are subject to GST as applicable and have been charged accordingly.\n4. Jurisdiction:\nAll disputes are subject to the jurisdiction of the courts in Maharashtra, Aurangabad, India.",
+  qtnTerms:"1. Validity:\nThis quotation is valid for 15 days from the date of issue.\n2. Payment Terms:\nPayment is due immediately upon completion of work or as per agreed credit terms.\n3. Udyam Registration Number: UDYAM-MH-04-0182849\n4. Goods and Services:\nGST will be charged as applicable on the final invoice.\n5. Jurisdiction:\nAll disputes are subject to the jurisdiction of the courts in Maharashtra, Aurangabad, India."
+};
+const STATES = {"01":"Jammu and Kashmir","02":"Himachal Pradesh","03":"Punjab","04":"Chandigarh","05":"Uttarakhand","06":"Haryana","07":"Delhi","08":"Rajasthan","09":"Uttar Pradesh","10":"Bihar","19":"West Bengal","20":"Jharkhand","21":"Odisha","22":"Chhattisgarh","23":"Madhya Pradesh","24":"Gujarat","27":"Maharashtra","29":"Karnataka","30":"Goa","32":"Kerala","33":"Tamil Nadu","11":"Sikkim","12":"Arunachal Pradesh","13":"Nagaland","14":"Manipur","15":"Mizoram","16":"Tripura","17":"Meghalaya","18":"Assam","26":"Dadra and Nagar Haveli and Daman and Diu","31":"Lakshadweep","34":"Puducherry","35":"Andaman and Nicobar Islands","36":"Telangana","37":"Andhra Pradesh","38":"Ladakh","97":"Other Territory"};
+const TYPES = {
+  INV:{label:"Tax Invoice", short:"Invoice", plural:"Invoices", tab:"inv", noLabel:"Invoice No.", dateLabel:"Invoice Date", due:"Due Date", partyRole:"customer", partyLabel:"Bill To"},
+  QTN:{label:"Quotation", short:"Quotation", plural:"Quotations", tab:"qtn", noLabel:"Quotation No.", dateLabel:"Quotation Date", due:"Valid Till", partyRole:"customer", partyLabel:"Quotation For"},
+  PUR:{label:"Purchase Bill", short:"Purchase", plural:"Purchases", tab:"pur", noLabel:"Supplier Bill No.", dateLabel:"Bill Date", due:"Due Date", partyRole:"supplier", partyLabel:"Supplier"}
+};
+const TABS = [["dash","Dashboard"],["inv","Invoices"],["qtn","Quotations"],["pur","Purchases"],["gst","GST Reports"],["parties","Customers & Suppliers"],["items","Items"],["settings","Settings"]];
+
+const S = {co:{...DEFAULT_CO}, parties:{}, items:{}, docs:{}};
+const UI = {tab:"dash", view:null, q:""};
+let MODE = "local", DB = null, DL = null, CANWRITE = true, READY = {company:false,parties:false,items:false,docs:false};
+const LS_KEY = "rsf-billing-v1";
+
+/* ---------- helpers ---------- */
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num = v => { const n = parseFloat(String(v ?? "").replace(/,/g,"")); return isFinite(n) ? n : 0; };
+const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+const fmt = n => { n = r2(num(n)); return n.toLocaleString("en-IN", {minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2}); };
+const money = n => "₹ " + fmt(n);
+const pad2 = n => String(n).padStart(2,"0");
+const iso = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const today = () => iso(new Date());
+const addDays = (s, n) => { const d = new Date(s + "T00:00:00"); d.setDate(d.getDate() + num(n)); return iso(d); };
+const dmy = s => s ? s.split("-").reverse().join("/") : "";
+const uid = p => p + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const stateOfGstin = g => { const c = String(g||"").slice(0,2); return STATES[c] ? {code:c, name:STATES[c]} : null; };
+
+function words(n){
+  n = Math.floor(Math.abs(n));
+  if (n === 0) return "Zero";
+  const a = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+  const b = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+  const two = x => x < 20 ? a[x] : b[Math.floor(x/10)] + (x%10 ? " " + a[x%10] : "");
+  const three = x => x >= 100 ? a[Math.floor(x/100)] + " Hundred" + (x%100 ? " " + two(x%100) : "") : two(x);
+  const out = [];
+  const cr = Math.floor(n/1e7); n %= 1e7;
+  const l = Math.floor(n/1e5); n %= 1e5;
+  const t = Math.floor(n/1e3); n %= 1e3;
+  if (cr) out.push((cr >= 1000 ? words(cr) : three(cr)) + " Crore");
+  if (l) out.push(two(l) + " Lakh");
+  if (t) out.push(two(t) + " Thousand");
+  if (n) out.push(three(n));
+  return out.join(" ");
+}
+function amountWords(total){
+  const r = Math.floor(total), p = Math.round((total - r) * 100);
+  return words(r) + " Rupees" + (p ? " and " + words(p) + " Paise" : "");
+}
+
+function calc(d){
+  let taxable = 0, tax = 0, qty = 0; const byRate = {};
+  const lines = (d.lines || []).map(l => {
+    const amt = r2(num(l.qty) * num(l.rate));
+    const t = r2(amt * num(l.gst) / 100);
+    taxable += amt; tax += t; qty += num(l.qty);
+    const k = String(num(l.gst)); byRate[k] = r2((byRate[k] || 0) + t);
+    return {...l, taxable: amt, tax: t, total: r2(amt + t)};
+  });
+  taxable = r2(taxable); tax = r2(tax);
+  const gross = d.rcm ? taxable : r2(taxable + tax);
+  const total = d.noRound ? gross : Math.round(gross);
+  const roundOff = r2(total - gross);
+  const received = r2((d.payments || []).reduce((s, p) => s + num(p.amount), 0));
+  return {lines, taxable, tax, qty, byRate, gross, total, roundOff, received, balance: r2(total - received)};
+}
+function status(d){
+  const c = calc(d);
+  if (d.cancelled) return ["Cancelled","neu"];
+  if (d.type === "QTN") return d.convertedTo ? ["Converted","ok"] : (d.due && d.due < today() ? ["Expired","neu"] : ["Open","warn"]);
+  if (c.balance <= 0) return ["Paid","ok"];
+  if (d.due && d.due < today()) return [c.received > 0 ? "Part paid · overdue" : "Overdue","bad"];
+  return [c.received > 0 ? "Part paid" : (d.type === "PUR" ? "Unpaid" : "Due"),"warn"];
+}
+function nextNo(type){
+  const pre = type === "INV" ? S.co.invPrefix : type === "QTN" ? S.co.qtnPrefix : "";
+  let max = 0;
+  Object.values(S.docs).forEach(d => {
+    if (d.type !== type || !String(d.no).startsWith(pre)) return;
+    const n = parseInt(String(d.no).slice(pre.length), 10);
+    if (isFinite(n) && n > max) max = n;
+  });
+  return pre + (max + 1);
+}
+function docsOf(type){ return Object.values(S.docs).filter(d => d.type === type).sort((a,b) => (b.date||"").localeCompare(a.date||"") || String(b.no).localeCompare(String(a.no), undefined, {numeric:true})); }
+function fileSafe(s){ return String(s).replace(/[\\/:*?"<>|]+/g,"-").replace(/\s+/g," ").trim(); }
+
+/* ---------- storage ---------- */
+function loadLocal(){
+  try { const raw = localStorage.getItem(LS_KEY); if (raw) { const o = JSON.parse(raw); S.co = {...DEFAULT_CO, ...(o.co||{})}; S.parties = o.parties||{}; S.items = o.items||{}; S.docs = o.docs||{}; } } catch(e) {}
+}
+function saveLocal(){ try { localStorage.setItem(LS_KEY, JSON.stringify({co:S.co, parties:S.parties, items:S.items, docs:S.docs})); } catch(e) { toast("Could not save on this device. Storage may be full or blocked."); } }
+async function put(col, id, data){
+  if (col === "config") S.co = {...DEFAULT_CO, ...data}; else S[col][id] = data;
+  if (MODE === "db") {
+    try { await DB.collection(col).doc(id).set(data); }
+    catch(e) { handleWriteError(e); throw e; }
+  } else if (MODE === "server") {
+    try { await api("put", {col, id, data}); } catch(e) { serverErr(e); throw e; }
+  } else if (MODE === "idb") {
+    try { await idbWrite([[col, col === "config" ? "company" : id, data]]); } catch(e) { toast("Could not save to the database on this device."); throw e; }
+  } else saveLocal();
+}
+async function del(col, id){
+  delete S[col][id];
+  if (MODE === "db") { try { await DB.collection(col).doc(id).delete(); } catch(e){ handleWriteError(e); throw e; } }
+  else if (MODE === "server") { try { await api("del", {col, id}); } catch(e) { serverErr(e); throw e; } }
+  else if (MODE === "idb") { try { await idbWrite([[col, id, null]]); } catch(e) { toast("Could not delete from the database."); throw e; } }
+  else saveLocal();
+}
+function handleWriteError(e){
+  const c = e && e.code;
+  if (c === "invalid_argument") { CANWRITE = false; toast("You have view-only access. Ask the owner for Contributor access to make changes."); }
+  else if (c === "quota_exceeded") toast("Storage is full. Export a backup and delete old documents.");
+  else toast("Could not save. Check your connection and try again.");
+}
+
+/* ---------- shell ---------- */
+function setSync(text, on){ const s = $("#sync"); s.className = "sync" + (on ? " on" : ""); s.lastElementChild.textContent = text; }
+function renderTabs(){
+  $("#tabs").innerHTML = TABS.map(([k,l]) => `<button data-tab="${k}" aria-current="${UI.tab===k}">${l}</button>`).join("");
+}
+$("#tabs").addEventListener("click", e => { const b = e.target.closest("button[data-tab]"); if (!b) return; go(b.dataset.tab); });
+function go(tab, view=null){ UI.tab = tab; UI.view = view; UI.q = ""; render(); window.scrollTo(0,0); }
+function isEditing(){ return UI.view && (UI.view.kind === "edit" || UI.view.kind === "form" || UI.view.kind === "pay"); }
+function softRender(){ if (!isEditing()) render(); else { renderTabs(); fillDatalist(); } }
+function render(){
+  renderTabs(); fillDatalist();
+  $("#hdrName").textContent = S.co.name || "Billing";
+  const m = $("#main");
+  const v = UI.view;
+  if (v && v.kind === "doc") return renderDoc(m, v.id);
+  if (v && v.kind === "edit") return renderEditor(m);
+  if (v && v.kind === "form") return renderForm(m);
+  if (v && v.kind === "pay") return renderPay(m);
+  ({dash:renderDash, inv:()=>renderList(m,"INV"), qtn:()=>renderList(m,"QTN"), pur:()=>renderList(m,"PUR"), gst:renderGST, parties:renderParties, items:renderItems, settings:renderSettings})[UI.tab](m);
+}
+function fillDatalist(){ $("#itemlist").innerHTML = Object.values(S.items).map(i => `<option value="${esc(i.name)}"></option>`).join(""); }
+function loading(){ return MODE === "db" && !(READY.parties && READY.items && READY.docs); }
+function roBanner(){ return CANWRITE ? "" : `<div class="banner">You can view these bills but not change them. The owner can give you Contributor access from the Share menu.</div>`; }
+
+/* ---------- dashboard ---------- */
+function renderDash(m){
+  const now = new Date(); const fy = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  const fyS = `${fy}-04-01`, fyE = `${fy+1}-03-31`, mS = iso(new Date(now.getFullYear(), now.getMonth(), 1));
+  const inFY = d => d.date >= fyS && d.date <= fyE;
+  let sales=0, salesM=0, outGst=0, purch=0, inGst=0, recv=0, recvN=0, pay=0;
+  Object.values(S.docs).forEach(d => {
+    if (d.cancelled) return;
+    const c = calc(d);
+    if (d.type === "INV") { if (inFY(d)) { sales += c.total; outGst += c.tax; } if (d.date >= mS) salesM += c.total; if (c.balance > 0) { recv += c.balance; recvN++; } }
+    if (d.type === "PUR") { if (inFY(d)) { purch += c.total; inGst += c.tax; } if (c.balance > 0) pay += c.balance; }
+  });
+  const openQ = docsOf("QTN").filter(d => !d.convertedTo).length;
+  const recent = Object.values(S.docs).sort((a,b) => (b.updated||0) - (a.updated||0)).slice(0,8);
+  m.innerHTML = `<div class="stack">
+    ${roBanner()}
+    ${backupDue() ? `<div class="banner row spread"><span>${lastBackup() ? "Your last backup was on " + dmy(lastBackup()) + "." : "You have not downloaded a backup yet."} Your bills live only in this browser, so keep a copy safe.</span><button class="btn" id="bk">Download backup</button></div>` : ""}
+    <div class="row spread"><h1>Dashboard</h1><span class="muted small">FY ${fy}-${String(fy+1).slice(2)} · ${dmy(today())}</span></div>
+    ${CANWRITE ? `<div class="quick">
+      <button data-new="INV"><b>New invoice</b><span>${esc(nextNo("INV"))}</span></button>
+      <button data-new="QTN"><b>New quotation</b><span>${esc(nextNo("QTN"))}</span></button>
+      <button data-new="PUR"><b>New purchase bill</b><span>Record a supplier bill</span></button>
+    </div>` : ""}
+    <div class="kpis">
+      <div class="kpi"><label>Sales this FY</label><div class="v">${money(sales)}</div><div class="s">This month ${money(salesM)}</div></div>
+      <div class="kpi"><label>To receive</label><div class="v">${money(recv)}</div><div class="s">${recvN} unpaid invoice${recvN===1?"":"s"}</div></div>
+      <div class="kpi"><label>Purchases this FY</label><div class="v">${money(purch)}</div><div class="s">To pay ${money(pay)}</div></div>
+      ${(()=>{ const P = periods().month[1] || periods().month[0]; const g = gstr3b(P); return `<div class="kpi"><label>GST cash to pay · ${P.label}</label><div class="v">${money(r2(g.cash.i+g.cash.c+g.cash.s))}</div><div class="s">Output ${money(r2(g.out.i+g.out.c+g.out.s))} · ITC ${money(r2(g.itc.i+g.itc.c+g.itc.s))}</div></div>`; })()}
+      <div class="kpi"><label>Open quotations</label><div class="v">${openQ}</div><div class="s">Not yet converted</div></div>
+    </div>
+    <div class="panel"><div class="pad row spread"><h3>Recent documents</h3></div>
+      ${loading() ? `<div class="empty">Loading your bills…</div>` : recent.length ? docTable(recent, true) : `<div class="empty"><b>No bills yet</b>Create your first invoice or quotation with the buttons above.</div>`}
+    </div></div>`;
+  bindDocTable(m);
+  m.querySelectorAll("[data-new]").forEach(b => b.onclick = () => newDoc(b.dataset.new));
+  const bk = $("#bk", m); if (bk) bk.onclick = () => downloadBackup().then(render);
+}
+function docTable(list, showType){
+  return `<div class="tablewrap"><table class="list"><thead><tr>${showType?"<th>Type</th>":""}<th>No.</th><th>Date</th><th>Party</th><th class="r">Amount</th><th>Status</th></tr></thead><tbody>
+  ${list.map(d => { const c = calc(d), [st, cls] = status(d);
+    return `<tr class="click" data-open="${esc(d.id)}">${showType?`<td>${TYPES[d.type].short}</td>`:""}<td class="num">${esc(d.no)}</td><td class="num">${dmy(d.date)}</td><td>${esc(d.party?.name)}</td><td class="r num">${fmt(c.total)}${d.type!=="QTN" && c.received>0 && c.balance>0?`<div class="muted small">Bal ${fmt(c.balance)}</div>`:""}</td><td><span class="pill ${cls}">${st}</span></td></tr>`; }).join("")}
+  </tbody></table></div>`;
+}
+function bindDocTable(m){ m.querySelectorAll("[data-open]").forEach(tr => tr.onclick = () => { UI.view = {kind:"doc", id:tr.dataset.open}; render(); window.scrollTo(0,0); }); }
+
+/* ---------- lists ---------- */
+function renderList(m, type){
+  const T = TYPES[type]; const q = UI.q.toLowerCase();
+  const all = docsOf(type);
+  const list = all.filter(d => !q || [d.no, d.party?.name, ...(d.lines||[]).map(l=>l.name)].join(" ").toLowerCase().includes(q));
+  let tot = 0, bal = 0; list.forEach(d => { if (d.cancelled) return; const c = calc(d); tot += c.total; bal += c.balance; });
+  m.innerHTML = `<div class="stack">${roBanner()}
+    <div class="row spread"><h1>${T.plural}</h1>${CANWRITE?`<button class="btn pri" id="newBtn">+ New ${T.short.toLowerCase()}</button>`:""}</div>
+    <div class="row spread"><input class="search" id="q" type="search" placeholder="Search number, party or item" value="${esc(UI.q)}">
+      <span class="muted small">${list.length} shown · Total <span class="num">${money(tot)}</span>${type!=="QTN"?` · Balance <span class="num">${money(bal)}</span>`:""}</span></div>
+    <div class="panel">${loading() ? `<div class="empty">Loading…</div>` : list.length ? docTable(list, false) : `<div class="empty"><b>No ${T.plural.toLowerCase()} ${q?"match":"yet"}</b>${q?"Try another search.":`Tap “New ${T.short.toLowerCase()}” to create one.`}</div>`}</div></div>`;
+  bindDocTable(m);
+  const nb = $("#newBtn", m); if (nb) nb.onclick = () => newDoc(type);
+  const qi = $("#q", m); qi.oninput = () => { UI.q = qi.value; const pos = qi.selectionStart; renderList(m, type); const n = $("#q", m); n.focus(); n.setSelectionRange(pos,pos); };
+}
+
+/* ---------- document view ---------- */
+function paperHTML(d){
+  const T = TYPES[d.type], c = calc(d), co = S.co;
+  const igst = !!d.igst;
+  const showHsn = c.lines.some(l => l.hsn);
+  const title = d.type === "INV" ? "TAX INVOICE" : d.type === "QTN" ? "QUOTATION" : "PURCHASE BILL";
+  const taxRows = Object.entries(c.byRate).filter(([r,t]) => num(r) > 0).flatMap(([r,t]) => igst ? [[`IGST @${fmt(r)}%`, t]] : [[`CGST @${fmt(num(r)/2)}%`, r2(t/2)], [`SGST @${fmt(num(r)/2)}%`, r2(t - r2(t/2))]]);
+  const p = d.party || {};
+  const isPur = d.type === "PUR";
+  const head = isPur
+    ? `<div class="co"><div><h2>${esc(p.name)}</h2><div>${esc(p.address)}</div>${p.gstin?`<div><b>GSTIN:</b> ${esc(p.gstin)}</div>`:""}${p.phone?`<div><b>Mobile:</b> ${esc(p.phone)}</div>`:""}</div></div>`
+    : `<div class="co"><img src="${LOGO}" alt=""><div><h2>${esc(co.name)}</h2><div>${esc(co.address)}</div>
+        <div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:6px"><span><b>Mobile:</b> ${esc(co.mobile)}</span><span><b>GSTIN:</b> ${esc(co.gstin)}</span><span><b>PAN Number:</b> ${esc(co.pan)}</span></div>
+        <div><b>Email:</b> ${esc(co.email)}</div></div></div>`;
+  const partyBlock = (label, x) => `<div><h4>${label}</h4><div style="font-weight:700;font-size:14px;margin-bottom:4px">${esc(x.name)}</div><div style="white-space:pre-line">${esc(x.address)}</div>
+    ${x.gstin?`<div>GSTIN: &nbsp; ${esc(x.gstin)}</div>`:""}${x.pan?`<div>PAN Number: &nbsp;${esc(x.pan)}</div>`:""}${x.pos?`<div>Place of Supply: &nbsp;${esc(x.pos)}</div>`:""}</div>`;
+  const ship = d.shipSame !== false ? {name:p.name, address:p.address} : {name:d.shipName, address:d.shipAddress};
+  return `<div class="paper">
+    <div class="tag">${title}${d.cancelled?` <em style="color:#c4161c;border-color:#c4161c">CANCELLED</em>`:""} <em>${d.type==="INV"?"ORIGINAL FOR RECIPIENT":isPur?"PURCHASE RECORD":"ESTIMATE"}</em></div>
+    ${head}
+    <div class="redbar"></div>
+    <div class="band"><span><b>${T.noLabel}:</b> ${esc(d.no)}</span><span><b>${T.dateLabel.replace("Quotation ","")}:</b> ${dmy(d.date)}</span><span>${d.due?`<b>${T.due}:</b> ${dmy(d.due)}`:""}</span></div>
+    <div class="parties">${isPur ? partyBlock("BILLED TO (US)", {name:co.name, address:co.address, gstin:co.gstin, pan:co.pan}) + `<div>${d.ref?`<h4>OUR ENTRY REF.</h4><div>${esc(d.ref)}</div>`:""}</div>`
+      : partyBlock(T.partyLabel.toUpperCase(), {...p, pos:d.pos}) + (d.type==="INV" || d.shipSame===false ? partyBlock("SHIP TO", ship) : "<div></div>")}</div>
+    <table><thead><tr><th>ITEMS</th>${showHsn?"<th>HSN/SAC</th>":""}<th>QTY.</th><th>RATE</th><th>TAX</th><th>AMOUNT</th></tr></thead><tbody>
+      ${c.lines.map(l => `<tr><td><div style="font-size:13px">${esc(l.name)}</div>${l.desc?`<div class="d">${esc(l.desc)}</div>`:""}</td>${showHsn?`<td>${esc(l.hsn)}</td>`:""}
+        <td>${fmt(l.qty)} ${esc(l.unit||"")}</td><td>${fmt(l.rate)}</td><td>${fmt(l.tax)}<div class="d" style="color:#777">(${fmt(l.gst)}%)</div></td><td>${fmt(l.total)}</td></tr>`).join("")}
+      <tr class="sub"><td>SUBTOTAL</td>${showHsn?"<td></td>":""}<td>${fmt(c.qty)}</td><td></td><td>₹ ${fmt(c.tax)}</td><td>₹ ${fmt(c.gross)}</td></tr>
+    </tbody></table>
+    <div class="foot">
+      <div>${isPur ? "" : `<div style="font-weight:700;margin-bottom:4px">BANK DETAILS</div><div class="kv"><span>Name:</span><span>${esc(co.bankName)}</span><span>IFSC Code:</span><span>${esc(co.ifsc)}</span><span>Account No:</span><span>${esc(co.account)}</span><span>Bank:</span><span>${esc(co.bank)}</span></div>`}</div>
+      <div class="tot"><span>Taxable Amount</span><span>₹ ${fmt(c.taxable)}</span>
+        ${taxRows.map(([l,v]) => `<span>${l}</span><span>₹ ${fmt(v)}</span>`).join("")}
+        ${c.roundOff?`<span>Round Off</span><span>${c.roundOff>0?"+":"−"} ₹ ${fmt(Math.abs(c.roundOff))}</span>`:""}
+        <span class="g">${d.rcm?"Total (GST under RCM paid by us)":"Total Amount"}</span><span class="g">₹ ${fmt(c.total)}</span>
+        ${d.type!=="QTN"?`<span>${isPur?"Paid":"Received"} Amount</span><span>₹ ${fmt(c.received)}</span>${c.received>0?`<span>Balance</span><span>₹ ${fmt(c.balance)}</span>`:""}`:""}
+      </div>
+    </div>
+    <div class="foot">
+      <div>${isPur ? (d.notes?`<div style="font-weight:700">NOTES</div><div class="terms">${esc(d.notes)}</div>`:"") : `<div style="font-weight:700;margin-bottom:4px">TERMS AND CONDITIONS</div><div class="terms">${esc(d.terms)}</div>${d.notes?`<div style="font-weight:700;margin:8px 0 2px">NOTES</div><div class="terms">${esc(d.notes)}</div>`:""}`}</div>
+      <div style="text-align:right"><div style="font-weight:700">Total Amount (in words)</div><div>${amountWords(c.total)}</div>
+        ${isPur?"":`<div class="sign">For ${esc(co.name)}<br><br><br>Authorised Signatory</div>`}</div>
+    </div></div>`;
+}
+function renderDoc(m, id){
+  const d = S.docs[id];
+  if (!d) { m.innerHTML = `<div class="empty"><b>Document not found</b>It may have been deleted.<br><br><button class="btn" id="back">Back</button></div>`; $("#back").onclick = () => go(UI.tab); return; }
+  const T = TYPES[d.type], c = calc(d), [st, cls] = status(d);
+  const standalone = !window.claude;
+  m.innerHTML = `<div class="stack">
+    <div class="dochead noprint"><div class="stack" style="gap:4px"><button class="btn ghost" id="back" style="padding-left:0">← ${T.plural}</button>
+      <h1>${T.short} ${esc(d.no)}</h1><div class="row"><span class="pill ${cls}">${st}</span><span class="muted small">${esc(d.party?.name)} · <span class="num">${money(c.total)}</span>${d.convertedTo?` · Invoice ${esc(S.docs[d.convertedTo]?.no||"")}`:""}${d.fromQtn&&S.docs[d.fromQtn]?` · From quotation ${esc(S.docs[d.fromQtn].no)}`:""}</span></div></div>
+      <div class="row">
+        <button class="btn pri" id="pdf">Download PDF</button>
+        ${standalone?`<button class="btn" id="print">Print</button>`:""}
+        ${CANWRITE?`<button class="btn" id="edit">Edit</button>`:""}
+        ${CANWRITE && d.type==="INV"?`<button class="btn" id="cancelInv">${d.cancelled?"Restore invoice":"Cancel invoice"}</button>`:""}
+        ${CANWRITE && !d.cancelled && d.type!=="QTN" && c.balance>0?`<button class="btn" id="pay">${d.type==="PUR"?"Record payment made":"Record payment received"}</button>`:""}
+        ${CANWRITE && d.type==="QTN" && !d.convertedTo?`<button class="btn" id="conv">Convert to invoice</button>`:""}
+        ${CANWRITE?`<button class="btn" id="dup">Duplicate</button><button class="btn danger" id="delete">Delete</button>`:""}
+      </div></div>
+    ${!standalone?`<div class="muted small noprint">To print, download the PDF and print it from your phone or computer.</div>`:""}
+    ${(d.payments||[]).length?`<div class="panel pad noprint"><h3>Payments</h3><div class="payments" style="margin-top:8px">${d.payments.map((p,i)=>`<div class="row spread"><span>${dmy(p.date)} · ${esc(p.mode||"")}${p.ref?" · "+esc(p.ref):""}</span><span class="row"><span class="num">${money(p.amount)}</span>${CANWRITE?`<button class="btn ghost small" data-rmpay="${i}">Remove</button>`:""}</span></div>`).join("")}</div></div>`:""}
+    <div class="paper-wrap">${paperHTML(d)}</div></div>`;
+  $("#back").onclick = () => go(T.tab);
+  $("#pdf").onclick = () => downloadPDF(d);
+  const pr = $("#print"); if (pr) pr.onclick = () => window.print();
+  const ed = $("#edit"); if (ed) ed.onclick = () => { UI.view = {kind:"edit", draft: JSON.parse(JSON.stringify(d))}; render(); window.scrollTo(0,0); };
+  const pb = $("#pay"); if (pb) pb.onclick = () => { UI.view = {kind:"pay", id, draft:{date:today(), amount:c.balance, mode:"Bank transfer", ref:""}}; render(); };
+  const ci = $("#cancelInv"); if (ci) ci.onclick = () => confirmBox(d.cancelled ? `Restore invoice ${d.no}? It will count in sales and GST reports again.` : `Cancel invoice ${d.no}? It stays in the list and in GSTR-1 Table 13 as cancelled, but is removed from sales and tax totals.`, d.cancelled ? "Restore" : "Cancel invoice").then(ok => { if (!ok) return; const x = JSON.parse(JSON.stringify(d)); x.cancelled = !d.cancelled; x.updated = Date.now(); put("docs", id, x).then(() => { toast(x.cancelled ? "Invoice cancelled" : "Invoice restored"); render(); }).catch(()=>{}); });
+  const cv = $("#conv"); if (cv) cv.onclick = () => convertQtn(d);
+  const du = $("#dup"); if (du) du.onclick = () => { const x = JSON.parse(JSON.stringify(d)); x.id = uid("d"); x.no = d.type==="PUR" ? "" : nextNo(d.type); x.date = today(); x.due = defaultDue(d.type, x.date); x.payments = []; delete x.convertedTo; delete x.fromQtn; UI.view = {kind:"edit", draft:x, isNew:true}; render(); };
+  const dl = $("#delete"); if (dl) dl.onclick = () => confirmBox(`Delete ${T.short.toLowerCase()} ${d.no}? This cannot be undone.`, "Delete").then(ok => { if (!ok) return; del("docs", id).then(() => { toast(`${T.short} deleted`); go(T.tab); }).catch(()=>{}); });
+  m.querySelectorAll("[data-rmpay]").forEach(b => b.onclick = () => confirmBox("Remove this payment entry?","Remove").then(ok => { if (!ok) return; const x = JSON.parse(JSON.stringify(d)); x.payments.splice(+b.dataset.rmpay,1); x.updated = Date.now(); put("docs", id, x).then(() => render()).catch(()=>{}); }));
+}
+function defaultDue(type, date){ return type === "INV" ? addDays(date, S.co.dueDays) : type === "QTN" ? addDays(date, S.co.qtnValidDays) : ""; }
+function convertQtn(q){
+  const x = JSON.parse(JSON.stringify(q));
+  Object.assign(x, {id: uid("d"), type:"INV", no: nextNo("INV"), date: today(), due: defaultDue("INV", today()), terms: S.co.terms, payments: [], fromQtn: q.id, shipSame: q.shipSame !== false});
+  delete x.convertedTo;
+  UI.view = {kind:"edit", draft:x, isNew:true}; render(); window.scrollTo(0,0);
+}
+
+/* ---------- payment form ---------- */
+function renderPay(m){
+  const v = UI.view, d = S.docs[v.id]; const c = calc(d);
+  m.innerHTML = `<div class="stack" style="max-width:520px"><button class="btn ghost" id="back" style="padding-left:0;align-self:flex-start">← Back</button>
+    <h1>${d.type==="PUR"?"Payment made":"Payment received"}</h1><div class="muted">${TYPES[d.type].short} ${esc(d.no)} · ${esc(d.party?.name)} · Balance <span class="num">${money(c.balance)}</span></div>
+    <div class="panel pad stack"><div class="grid2">
+      <label class="f"><span>Date</span><input type="date" id="pd" value="${v.draft.date}"></label>
+      <label class="f"><span>Amount (₹)</span><input id="pa" inputmode="decimal" value="${v.draft.amount}"></label>
+      <label class="f"><span>Mode</span><select id="pm">${["Bank transfer","UPI","Cheque","Cash","NEFT/RTGS"].map(o=>`<option ${o===v.draft.mode?"selected":""}>${o}</option>`).join("")}</select></label>
+      <label class="f"><span>Reference</span><input id="pr" placeholder="UTR / cheque no." value="${esc(v.draft.ref)}"></label></div>
+      <div class="row"><button class="btn pri" id="save">Save payment</button></div></div></div>`;
+  $("#back").onclick = () => { UI.view = {kind:"doc", id:v.id}; render(); };
+  $("#save").onclick = () => {
+    const amt = r2(num($("#pa").value)); if (amt <= 0) return toast("Enter the amount.");
+    const x = JSON.parse(JSON.stringify(d)); x.payments = [...(x.payments||[]), {date:$("#pd").value||today(), amount:amt, mode:$("#pm").value, ref:$("#pr").value.trim()}]; x.updated = Date.now();
+    put("docs", x.id, x).then(() => { toast("Payment saved"); UI.view = {kind:"doc", id:x.id}; render(); }).catch(()=>{});
+  };
+}
+
+/* ---------- editor ---------- */
+function blankLine(){ return {name:"", desc:"", hsn:"", qty:1, unit:"PCS", rate:"", gst:18, saveItem:true}; }
+function newDoc(type){
+  const d = today();
+  UI.view = {kind:"edit", isNew:true, draft:{id:uid("d"), type, no: type==="PUR" ? "" : nextNo(type), date:d, due:defaultDue(type,d),
+    party:null, pos:S.co.state, igst:false, shipSame:true, shipName:"", shipAddress:"", lines:[blankLine()], terms: type==="INV" ? S.co.terms : type==="QTN" ? S.co.qtnTerms : "", notes:"", payments:[], ref:""}};
+  UI.tab = TYPES[type].tab; render(); window.scrollTo(0,0);
+}
+function partyOptions(role){ return Object.values(S.parties).filter(p => p.role === role || p.role === "both").sort((a,b) => a.name.localeCompare(b.name)); }
+function renderEditor(m){
+  const v = UI.view, d = v.draft, T = TYPES[d.type];
+  const plist = partyOptions(T.partyRole);
+  const curId = d.party?.id && S.parties[d.party.id] ? d.party.id : (d.party ? "__new" : "");
+  if (curId === "__new" && !v.np) v.np = {...d.party};
+  m.innerHTML = `<div class="stack">
+    <button class="btn ghost" id="back" style="padding-left:0;align-self:flex-start">← Cancel</button>
+    <h1>${v.isNew ? "New" : "Edit"} ${T.short.toLowerCase()}</h1>
+    <div class="panel pad stack"><div class="grid4">
+      <label class="f"><span>${T.noLabel}</span><input id="no" value="${esc(d.no)}" ${d.type==="PUR"?'placeholder="As on supplier bill"':""}></label>
+      <label class="f"><span>${T.dateLabel}</span><input type="date" id="date" value="${d.date}"></label>
+      <label class="f"><span>${T.due}</span><input type="date" id="due" value="${d.due||""}"></label>
+      ${d.type==="PUR" ? `<label class="f"><span>Our ref. (optional)</span><input id="ref" value="${esc(d.ref||"")}"></label>`
+        : `<label class="f"><span>Place of supply</span><input id="pos" value="${esc(d.pos||"")}"></label>`}
+    </div></div>
+    <div class="panel pad stack"><h3>${T.partyLabel}</h3>
+      <label class="f"><span>Choose ${T.partyRole}</span><select id="psel"><option value="">— Select —</option>${plist.map(p=>`<option value="${esc(p.id)}" ${p.id===curId?"selected":""}>${esc(p.name)}</option>`).join("")}<option value="__new" ${curId==="__new"?"selected":""}>+ New ${T.partyRole}…</option></select></label>
+      <div id="pbox"></div>
+      ${d.type!=="PUR" ? `<label class="check"><input type="checkbox" id="igst" ${d.igst?"checked":""}> Out-of-state customer (charge IGST instead of CGST + SGST)</label>
+      <label class="check"><input type="checkbox" id="shipSame" ${d.shipSame!==false?"checked":""}> Ship to the same address</label>
+      <div class="grid2" id="shipBox" ${d.shipSame!==false?"hidden":""}><label class="f"><span>Ship to name</span><input id="shipName" value="${esc(d.shipName||"")}"></label><label class="f"><span>Ship to address</span><textarea id="shipAddress" rows="2">${esc(d.shipAddress||"")}</textarea></label></div>` : `<label class="check"><input type="checkbox" id="igst" ${d.igst?"checked":""}> Supplier charged IGST (out-of-state)</label><label class="check"><input type="checkbox" id="rcm" ${d.rcm?"checked":""}> Reverse charge applies (we pay the GST, e.g. GTA freight)</label>`}
+    </div>
+    <div class="panel pad stack"><div class="row spread"><h3>Items &amp; work</h3><span class="muted small">Type a new item freely, or pick a saved one</span></div>
+      <div class="lines" id="lines"></div>
+      <div class="row"><button class="btn" id="addLine">+ Add item</button></div>
+      <div class="totals" id="totals"></div>
+    </div>
+    <div class="panel pad stack">
+      ${d.type!=="PUR" ? `<label class="f"><span>Terms and conditions</span><textarea id="terms" rows="8">${esc(d.terms||"")}</textarea></label>` : ""}
+      <label class="f"><span>Notes (optional)</span><textarea id="notes" rows="2" placeholder="${d.type==="QTN"?"Delivery time, site conditions, exclusions":"Any remark to print on the bill"}">${esc(d.notes||"")}</textarea></label>
+      ${v.isNew && d.type!=="QTN" ? `<div class="grid2"><label class="f"><span>${d.type==="PUR"?"Paid now":"Received now"} (₹)</span><input id="paidNow" inputmode="decimal" value="${esc(v.paidNow||"")}" placeholder="0"></label></div>` : ""}
+    </div>
+    <div class="sticky-actions row spread"><span class="muted small" id="sumline"></span><div class="row"><button class="btn" id="cancel2">Cancel</button><button class="btn pri" id="save">Save ${T.short.toLowerCase()}</button></div></div>
+  </div>`;
+  renderPartyBox(); renderLines(); renderTotals();
+  const back = () => { UI.view = v.isNew ? null : {kind:"doc", id:d.id}; render(); };
+  $("#back").onclick = back; $("#cancel2").onclick = back;
+  const bind = (id, key, after) => { const el = $("#"+id); if (el) el.addEventListener("input", () => { d[key] = el.type === "checkbox" ? el.checked : el.value; if (after) after(); }); };
+  bind("no","no"); bind("due","due"); bind("pos","pos"); bind("ref","ref"); bind("terms","terms"); bind("notes","notes"); bind("shipName","shipName"); bind("shipAddress","shipAddress");
+  bind("date","date", () => { d.due = defaultDue(d.type, d.date) || d.due; $("#due").value = d.due || ""; });
+  bind("igst","igst", renderTotals); bind("rcm","rcm", renderTotals);
+  const ss = $("#shipSame"); if (ss) ss.addEventListener("change", () => { d.shipSame = ss.checked; $("#shipBox").hidden = ss.checked; });
+  const pn = $("#paidNow"); if (pn) pn.oninput = () => v.paidNow = pn.value;
+  $("#psel").onchange = e => {
+    const val = e.target.value;
+    if (val === "__new") { v.np = {id:"", name:"", address:"", gstin:"", pan:"", phone:"", role:T.partyRole}; d.party = {...v.np}; }
+    else if (val) { const p = S.parties[val]; d.party = {id:p.id, name:p.name, address:p.address||"", gstin:p.gstin||"", pan:p.pan||"", phone:p.phone||""}; autoTax(p.gstin, p.state); v.np = null; }
+    else { d.party = null; v.np = null; }
+    renderPartyBox(); renderTotals();
+  };
+  $("#addLine").onclick = () => { d.lines.push(blankLine()); renderLines(); renderTotals(); const all = m.querySelectorAll(".line [data-k=name]"); all[all.length-1].focus(); };
+  $("#save").onclick = saveDoc;
+}
+function autoTax(gstin, stateName){
+  const d = UI.view.draft; const st = stateOfGstin(gstin);
+  if (st) { d.igst = st.code !== S.co.stateCode; if (d.type !== "PUR") d.pos = st.name; }
+  else if (stateName && d.type !== "PUR") { d.pos = stateName; d.igst = stateName.trim().toLowerCase() !== S.co.state.toLowerCase(); }
+  const ig = $("#igst"); if (ig) ig.checked = !!d.igst; const pos = $("#pos"); if (pos) pos.value = d.pos || "";
+}
+function renderPartyBox(){
+  const v = UI.view, d = v.draft, box = $("#pbox");
+  if (v.np) {
+    box.innerHTML = `<div class="grid2" style="margin-top:4px">
+      <label class="f"><span>Name</span><input data-p="name" value="${esc(v.np.name)}" placeholder="Company / person name"></label>
+      <label class="f"><span>Mobile</span><input data-p="phone" inputmode="tel" value="${esc(v.np.phone)}"></label>
+      <label class="f span2"><span>Address</span><textarea data-p="address" rows="2">${esc(v.np.address)}</textarea></label>
+      <label class="f"><span>GSTIN</span><input data-p="gstin" value="${esc(v.np.gstin)}" style="text-transform:uppercase"></label>
+      <label class="f"><span>PAN</span><input data-p="pan" value="${esc(v.np.pan)}" style="text-transform:uppercase"></label></div>
+      <div class="muted small" style="margin-top:6px">Saved to your ${TYPES[d.type].partyRole} list when you save this bill.</div>`;
+    box.querySelectorAll("[data-p]").forEach(el => el.addEventListener("input", () => {
+      let val = el.value; if (el.dataset.p === "gstin" || el.dataset.p === "pan") val = val.toUpperCase().trim();
+      v.np[el.dataset.p] = val; d.party = {...v.np};
+      if (el.dataset.p === "gstin") { if (val.length >= 12 && !v.np.pan) { v.np.pan = val.slice(2,12); box.querySelector('[data-p=pan]').value = v.np.pan; d.party.pan = v.np.pan; } autoTax(val); renderTotals(); }
+    }));
+  } else if (d.party) {
+    const p = d.party;
+    box.innerHTML = `<div class="small muted" style="white-space:pre-line">${esc(p.address)}${p.gstin?"\nGSTIN "+esc(p.gstin):""}${p.pan?" · PAN "+esc(p.pan):""}</div>`;
+  } else box.innerHTML = "";
+}
+function renderLines(){
+  const d = UI.view.draft, box = $("#lines");
+  const names = new Set(Object.values(S.items).map(i => i.name.toLowerCase()));
+  box.innerHTML = d.lines.map((l, i) => `<div class="line" data-i="${i}">
+    <div class="line-top"><span class="ln">${i+1}</span><input data-k="name" list="itemlist" placeholder="Item or work, e.g. MS Rack Door" value="${esc(l.name)}" aria-label="Item name">
+      <button class="btn ghost" data-rm title="Remove item" aria-label="Remove item" ${d.lines.length<2?"disabled":""}>✕</button></div>
+    <textarea data-k="desc" rows="2" placeholder="Size, material and finish — one per line">${esc(l.desc)}</textarea>
+    <div class="line-grid">
+      <label class="f"><span>HSN/SAC</span><input data-k="hsn" value="${esc(l.hsn)}" inputmode="numeric"></label>
+      <label class="f"><span>Qty</span><input data-k="qty" value="${esc(l.qty)}" inputmode="decimal"></label>
+      <label class="f"><span>Unit</span><input data-k="unit" value="${esc(l.unit)}" list="units"></label>
+      <label class="f"><span>Rate (₹)</span><input data-k="rate" value="${esc(l.rate)}" inputmode="decimal"></label>
+      <label class="f"><span>GST %</span><select data-k="gst">${[0,5,12,18,28,40].map(g=>`<option value="${g}" ${num(l.gst)===g?"selected":""}>${g}%</option>`).join("")}</select></label>
+      <div class="f"><span>Amount</span><div class="amt" data-amt>—</div></div>
+    </div>
+    <label class="check small" data-savewrap ${d.type==="PUR" || !l.name || names.has(l.name.trim().toLowerCase())?"hidden":""}><input type="checkbox" data-k="saveItem" ${l.saveItem!==false?"checked":""}> Save “<span data-nm>${esc(l.name)}</span>” to my item list</label>
+  </div>`).join("") + `<datalist id="units">${["PCS","NOS","KG","TON","MTR","RMT","SQ.FT","SQ.MTR","SET","LTR","JOB","LOT","HRS","MANDAY"].map(u=>`<option value="${u}">`).join("")}</datalist>`;
+  box.querySelectorAll(".line").forEach(row => {
+    const i = +row.dataset.i, l = d.lines[i];
+    row.querySelectorAll("[data-k]").forEach(el => {
+      const k = el.dataset.k;
+      el.addEventListener(el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input", () => {
+        l[k] = el.type === "checkbox" ? el.checked : el.value;
+        if (k === "name") {
+          const it = Object.values(S.items).find(x => x.name.toLowerCase() === el.value.trim().toLowerCase());
+          const sw = row.querySelector("[data-savewrap]"); sw.hidden = d.type==="PUR" || !el.value.trim() || !!it; row.querySelector("[data-nm]").textContent = el.value.trim();
+          if (it && it.name !== l._picked) { l._picked = it.name; Object.assign(l, {desc: it.desc||"", hsn: it.hsn||"", unit: it.unit||"PCS", rate: it.rate || "", gst: it.gst ?? 18});
+            row.querySelector("[data-k=desc]").value = l.desc; row.querySelector("[data-k=hsn]").value = l.hsn; row.querySelector("[data-k=unit]").value = l.unit; row.querySelector("[data-k=rate]").value = l.rate; row.querySelector("[data-k=gst]").value = String(num(l.gst)); }
+        }
+        renderTotals();
+      });
+    });
+    row.querySelector("[data-rm]").onclick = () => { d.lines.splice(i,1); renderLines(); renderTotals(); };
+  });
+}
+function renderTotals(){
+  const d = UI.view.draft, c = calc(d);
+  document.querySelectorAll("#lines .line").forEach((row, i) => { const l = c.lines[i]; row.querySelector("[data-amt]").textContent = l && l.taxable ? fmt(l.taxable) : "—"; });
+  const rows = Object.entries(c.byRate).filter(([r]) => num(r) > 0).flatMap(([r,t]) => d.igst ? [[`IGST @${fmt(r)}%`, t]] : [[`CGST @${fmt(num(r)/2)}%`, r2(t/2)], [`SGST @${fmt(num(r)/2)}%`, r2(t-r2(t/2))]]);
+  $("#totals").innerHTML = `<span>Taxable amount</span><span class="num">${money(c.taxable)}</span>${rows.map(([l,v]) => `<span>${l}</span><span class="num">${money(v)}</span>`).join("")}
+    ${c.roundOff?`<span>Round off</span><span class="num">${c.roundOff>0?"+":"−"}${fmt(Math.abs(c.roundOff))}</span>`:""}
+    <span class="grand">Total</span><span class="grand num">${money(c.total)}</span>
+    <span class="muted small" style="grid-column:1/-1;text-align:right">${amountWords(c.total)}</span>`;
+  $("#sumline").innerHTML = `${c.lines.length} item${c.lines.length===1?"":"s"} · <span class="num">${money(c.total)}</span>`;
+}
+async function saveDoc(){
+  const v = UI.view, d = v.draft, T = TYPES[d.type];
+  d.no = String(d.no||"").trim();
+  if (!d.no) return toast(`Enter the ${T.noLabel.toLowerCase().replace(".","")}.`);
+  if (!d.party || !String(d.party.name||"").trim()) return toast(`Choose or add the ${T.partyRole}.`);
+  const lines = d.lines.filter(l => String(l.name).trim());
+  if (!lines.length) return toast("Add at least one item.");
+  if (lines.some(l => num(l.qty) <= 0)) return toast("Each item needs a quantity above zero.");
+  const dup = Object.values(S.docs).find(x => x.type === d.type && x.id !== d.id && x.no === d.no && (d.type !== "PUR" || x.party?.name === d.party.name));
+  if (dup && !(await confirmBox(`${T.noLabel} ${d.no} is already used. Save anyway?`, "Save anyway"))) return;
+  $("#save").disabled = true;
+  try {
+    if (v.np && v.np.name.trim()) {
+      const pid = uid("p"); const st = stateOfGstin(v.np.gstin);
+      const party = {id:pid, role:T.partyRole, name:v.np.name.trim(), address:v.np.address.trim(), gstin:v.np.gstin, pan:v.np.pan, phone:v.np.phone, email:"", state: st ? st.name : (d.type!=="PUR" ? d.pos : ""), updated:Date.now()};
+      await put("parties", pid, party); d.party = {id:pid, name:party.name, address:party.address, gstin:party.gstin, pan:party.pan, phone:party.phone};
+    }
+    for (const l of lines) {
+      const exists = Object.values(S.items).some(x => x.name.toLowerCase() === l.name.trim().toLowerCase());
+      if (!exists && l.saveItem !== false && d.type !== "PUR") { const iid = uid("i"); await put("items", iid, {id:iid, name:l.name.trim(), desc:l.desc||"", hsn:l.hsn||"", unit:l.unit||"PCS", rate:num(l.rate), gst:num(l.gst), updated:Date.now()}); }
+    }
+    const out = {...d, lines: lines.map(l => ({name:l.name.trim(), desc:String(l.desc||"").trim(), hsn:String(l.hsn||"").trim(), qty:num(l.qty), unit:String(l.unit||"").trim(), rate:num(l.rate), gst:num(l.gst)})), updated: Date.now()};
+    if (v.isNew && num(v.paidNow) > 0) out.payments = [...(out.payments||[]), {date: out.date, amount: r2(num(v.paidNow)), mode:"", ref:""}];
+    if (!out.created) out.created = Date.now();
+    await put("docs", out.id, out);
+    if (out.fromQtn && S.docs[out.fromQtn] && !S.docs[out.fromQtn].convertedTo) { const q = {...S.docs[out.fromQtn], convertedTo: out.id, updated: Date.now()}; await put("docs", q.id, q); }
+    toast(`${T.short} ${out.no} saved`);
+    UI.view = {kind:"doc", id:out.id}; render(); window.scrollTo(0,0);
+  } catch(e) { const b = $("#save"); if (b) b.disabled = false; }
+}
+
+/* ---------- parties & items ---------- */
+function renderParties(m){
+  const q = UI.q.toLowerCase();
+  const list = Object.values(S.parties).filter(p => !q || (p.name+" "+(p.gstin||"")+" "+(p.phone||"")).toLowerCase().includes(q)).sort((a,b) => a.name.localeCompare(b.name));
+  const roleL = {customer:"Customer", supplier:"Supplier", both:"Both"};
+  m.innerHTML = `<div class="stack">${roBanner()}<div class="row spread"><h1>Customers &amp; suppliers</h1>${CANWRITE?`<button class="btn pri" id="add">+ Add</button>`:""}</div>
+    <input class="search" id="q" type="search" placeholder="Search name, GSTIN or mobile" value="${esc(UI.q)}">
+    <div class="panel">${list.length ? `<div class="tablewrap"><table class="list"><thead><tr><th>Name</th><th>Type</th><th>GSTIN</th><th>Mobile</th><th class="r">Billed</th></tr></thead><tbody>
+      ${list.map(p => { const billed = Object.values(S.docs).filter(d => d.party?.id === p.id && d.type !== "QTN").reduce((s,d) => s + calc(d).total, 0);
+        return `<tr class="click" data-id="${esc(p.id)}"><td>${esc(p.name)}<div class="muted small">${esc((p.address||"").slice(0,60))}</div></td><td>${roleL[p.role]||""}</td><td class="num">${esc(p.gstin||"")}</td><td class="num">${esc(p.phone||"")}</td><td class="r num">${fmt(billed)}</td></tr>`; }).join("")}
+    </tbody></table></div>` : `<div class="empty"><b>No ${q?"matches":"customers yet"}</b>${q?"":"Add one here, or while making an invoice."}</div>`}</div></div>`;
+  const qi = $("#q", m); qi.oninput = () => { UI.q = qi.value; const pos = qi.selectionStart; renderParties(m); const n = $("#q", m); n.focus(); n.setSelectionRange(pos,pos); };
+  const a = $("#add", m); if (a) a.onclick = () => { UI.view = {kind:"form", what:"party", draft:{id:uid("p"), role:"customer", name:"", address:"", gstin:"", pan:"", phone:"", email:"", state:""}, isNew:true}; render(); };
+  m.querySelectorAll("tr[data-id]").forEach(tr => tr.onclick = () => { if (!CANWRITE) return; UI.view = {kind:"form", what:"party", draft:{...S.parties[tr.dataset.id]}}; render(); });
+}
+function renderItems(m){
+  const q = UI.q.toLowerCase();
+  const list = Object.values(S.items).filter(i => !q || (i.name+" "+(i.desc||"")).toLowerCase().includes(q)).sort((a,b) => a.name.localeCompare(b.name));
+  m.innerHTML = `<div class="stack">${roBanner()}<div class="row spread"><h1>Items</h1>${CANWRITE?`<button class="btn pri" id="add">+ Add item</button>`:""}</div>
+    <div class="muted small">Saved items fill in description, rate and GST when you pick them on a bill. New items typed on a bill are added here automatically.</div>
+    <input class="search" id="q" type="search" placeholder="Search items" value="${esc(UI.q)}">
+    <div class="panel">${list.length ? `<div class="tablewrap"><table class="list"><thead><tr><th>Item</th><th>HSN/SAC</th><th>Unit</th><th class="r">Rate</th><th class="r">GST</th></tr></thead><tbody>
+      ${list.map(i => `<tr class="click" data-id="${esc(i.id)}"><td>${esc(i.name)}<div class="muted small" style="white-space:pre-line">${esc(i.desc||"")}</div></td><td class="num">${esc(i.hsn||"")}</td><td>${esc(i.unit||"")}</td><td class="r num">${i.rate ? fmt(i.rate) : "—"}</td><td class="r num">${fmt(i.gst)}%</td></tr>`).join("")}
+    </tbody></table></div>` : `<div class="empty"><b>No ${q?"matches":"items yet"}</b>${q?"":"Add your common work here: rack doors, gates, sheds, grills."}</div>`}</div></div>`;
+  const qi = $("#q", m); qi.oninput = () => { UI.q = qi.value; const pos = qi.selectionStart; renderItems(m); const n = $("#q", m); n.focus(); n.setSelectionRange(pos,pos); };
+  const a = $("#add", m); if (a) a.onclick = () => { UI.view = {kind:"form", what:"item", draft:{id:uid("i"), name:"", desc:"", hsn:"", unit:"PCS", rate:"", gst:18}, isNew:true}; render(); };
+  m.querySelectorAll("tr[data-id]").forEach(tr => tr.onclick = () => { if (!CANWRITE) return; UI.view = {kind:"form", what:"item", draft:{...S.items[tr.dataset.id]}}; render(); });
+}
+function renderForm(m){
+  const v = UI.view, d = v.draft, isP = v.what === "party";
+  const fld = (k, label, extra="") => `<label class="f ${extra.includes("span2")?"span2":""}"><span>${label}</span>${extra.includes("area") ? `<textarea data-f="${k}" rows="3">${esc(d[k]??"")}</textarea>` : `<input data-f="${k}" value="${esc(d[k]??"")}" ${extra.includes("dec")?'inputmode="decimal"':""}>`}</label>`;
+  m.innerHTML = `<div class="stack" style="max-width:720px"><button class="btn ghost" id="back" style="padding-left:0;align-self:flex-start">← Back</button>
+    <h1>${v.isNew?"Add":"Edit"} ${isP?"customer / supplier":"item"}</h1>
+    <div class="panel pad stack"><div class="grid2">
+    ${isP ? `${fld("name","Name","span2")}
+      <label class="f"><span>Type</span><select data-f="role">${[["customer","Customer"],["supplier","Supplier"],["both","Both"]].map(([k,l])=>`<option value="${k}" ${d.role===k?"selected":""}>${l}</option>`).join("")}</select></label>
+      ${fld("phone","Mobile")}${fld("address","Address","span2 area")}${fld("gstin","GSTIN")}${fld("pan","PAN")}${fld("state","State")}${fld("email","Email")}`
+    : `${fld("name","Item name","span2")}${fld("desc","Default description (one detail per line)","span2 area")}${fld("hsn","HSN/SAC")}${fld("unit","Unit")}${fld("rate","Rate (₹)","dec")}
+      <label class="f"><span>GST %</span><select data-f="gst">${[0,5,12,18,28,40].map(g=>`<option value="${g}" ${num(d.gst)===g?"selected":""}>${g}%</option>`).join("")}</select></label>`}
+    </div><div class="row spread"><div class="row"><button class="btn pri" id="save">Save</button><button class="btn" id="cancel">Cancel</button></div>${v.isNew?"":`<button class="btn danger" id="delete">Delete</button>`}</div></div></div>`;
+  m.querySelectorAll("[data-f]").forEach(el => el.addEventListener(el.tagName==="SELECT"?"change":"input", () => {
+    d[el.dataset.f] = el.value;
+    if (el.dataset.f === "gstin") { const g = el.value.toUpperCase().trim(); d.gstin = g; const st = stateOfGstin(g); if (st && !d.state) { d.state = st.name; m.querySelector("[data-f=state]").value = st.name; } if (g.length >= 12 && !d.pan) { d.pan = g.slice(2,12); m.querySelector("[data-f=pan]").value = d.pan; } }
+  }));
+  const back = () => { UI.view = null; render(); };
+  $("#back").onclick = back; $("#cancel").onclick = back;
+  $("#save").onclick = () => {
+    if (!String(d.name||"").trim()) return toast("Enter a name.");
+    const out = {...d, name: d.name.trim(), updated: Date.now()};
+    if (!isP) { out.rate = num(out.rate); out.gst = num(out.gst); } else { out.gstin = (out.gstin||"").toUpperCase(); out.pan = (out.pan||"").toUpperCase(); }
+    put(isP ? "parties" : "items", out.id, out).then(() => { toast("Saved"); back(); }).catch(()=>{});
+  };
+  const dl = $("#delete"); if (dl) dl.onclick = () => confirmBox(`Delete ${d.name}? Bills already made keep their copy of these details.`, "Delete").then(ok => { if (ok) del(isP ? "parties" : "items", d.id).then(() => { toast("Deleted"); back(); }).catch(()=>{}); });
+}
+
+/* ---------- settings ---------- */
+function renderSettings(m){
+  const c = {...S.co};
+  const fld = (k, label, cls="") => `<label class="f ${cls.includes("span2")?"span2":""}"><span>${label}</span>${cls.includes("area")?`<textarea id="s_${k}" rows="${cls.includes("tall")?9:3}">${esc(c[k])}</textarea>`:`<input id="s_${k}" value="${esc(c[k])}">`}</label>`;
+  m.innerHTML = `<div class="stack" style="max-width:860px">${roBanner()}<h1>Settings</h1>
+    <div class="panel pad stack"><h3>Business details</h3><div class="grid2">
+      ${fld("name","Business name","span2")}${fld("address","Address","span2 area")}${fld("mobile","Mobile")}${fld("email","Email")}${fld("gstin","GSTIN")}${fld("pan","PAN")}${fld("state","State")}${fld("stateCode","State code")}${fld("udyam","Udyam registration no.")}</div></div>
+    <div class="panel pad stack"><h3>Bank details (printed on invoices)</h3><div class="grid2">${fld("bankName","Account name")}${fld("ifsc","IFSC code")}${fld("account","Account no.")}${fld("bank","Bank & branch")}</div></div>
+    <div class="panel pad stack"><h3>Numbering &amp; defaults</h3><div class="grid2">${fld("invPrefix","Invoice number prefix")}${fld("qtnPrefix","Quotation number prefix")}${fld("dueDays","Invoice due in (days)")}${fld("qtnValidDays","Quotation valid for (days)")}</div>
+      <div class="muted small">Next invoice: <span class="num">${esc(nextNo("INV"))}</span> · Next quotation: <span class="num">${esc(nextNo("QTN"))}</span>. On 1 April change the prefix to the new financial year, e.g. FY2027-28/.</div></div>
+    <div class="panel pad stack"><h3>Terms and conditions</h3>${fld("terms","Invoice terms","span2 area tall")}${fld("qtnTerms","Quotation terms","span2 area tall")}</div>
+    ${CANWRITE?`<div class="row"><button class="btn pri" id="save">Save settings</button></div>`:""}
+    ${MODE === "server" ? `<div class="panel pad stack"><h3>Login</h3><div class="muted small">Signed in as ${esc(USER)}. Change the password used to open this billing website.</div>
+      <div class="grid2"><label class="f"><span>Current password</span><input type="password" id="pw_old" autocomplete="current-password"></label><label class="f"><span>New password</span><input type="password" id="pw_new" autocomplete="new-password"></label></div>
+      <div class="row"><button class="btn" id="pw_save">Change password</button><button class="btn ghost" id="logout">Log out</button></div></div>` : ""}
+    ${MODE === "idb" ? `<div class="panel pad stack"><h3>Database</h3>
+      <div class="muted small">Your data is stored in a database inside this browser on this device (IndexedDB). It works without internet. Other phones or computers do not see it, and clearing this browser's site data deletes it, so download a backup every week.</div>
+      <div class="kpis"><div class="kpi"><label>Documents</label><div class="v">${Object.keys(S.docs).length}</div></div><div class="kpi"><label>Customers & suppliers</label><div class="v">${Object.keys(S.parties).length}</div></div><div class="kpi"><label>Items</label><div class="v">${Object.keys(S.items).length}</div></div><div class="kpi"><label>Last backup</label><div class="v" style="font-size:16px">${lastBackup() ? dmy(lastBackup()) : "Never"}</div></div></div>
+      <div class="muted small" id="dbinfo"></div></div>` : ""}
+    <div class="panel pad stack"><h3>Backup</h3><div class="muted small">Download all bills, customers and items as one file. Keep it safe, or use it to move your data.</div>
+      <div class="row"><button class="btn" id="exp">Download backup</button>${CANWRITE?`<label class="btn" for="imp">Restore from backup</label><input type="file" id="imp" accept=".json,application/json" hidden>`:""}${MODE === "idb" ? `<button class="btn danger" id="erase">Erase all data</button>` : ""}</div></div>
+  </div>`;
+  const sv = $("#save"); if (sv) sv.onclick = () => {
+    const out = {}; Object.keys(DEFAULT_CO).forEach(k => { const el = $("#s_"+k); out[k] = el ? el.value : S.co[k]; });
+    out.dueDays = num(out.dueDays); out.qtnValidDays = num(out.qtnValidDays); out.updated = Date.now();
+    put("config", "company", out).then(() => { toast("Settings saved"); render(); }).catch(()=>{});
+  };
+  const pws = $("#pw_save"); if (pws) pws.onclick = () => api("passwd", {old: $("#pw_old").value, new: $("#pw_new").value}).then(() => { toast("Password changed"); $("#pw_old").value = $("#pw_new").value = ""; }).catch(e => toast(e.message));
+  const lo = $("#logout"); if (lo) lo.onclick = () => api("logout", {}).finally(() => { USER = ""; S.parties = {}; S.items = {}; S.docs = {}; renderAuth("login"); });
+  $("#exp").onclick = () => downloadBackup().then(() => { if (MODE === "idb") render(); });
+  const er = $("#erase"); if (er) er.onclick = async () => {
+    if (!(await confirmBox("Erase ALL bills, customers, items and settings from this device? Download a backup first. This cannot be undone.", "Erase everything"))) return;
+    if (!(await confirmBox("Are you sure? Everything in this database will be deleted.", "Yes, erase"))) return;
+    const ops = []; STORES.forEach(st => Object.keys(st === "config" ? {company:1} : S[st]).forEach(k => ops.push([st, k, null])));
+    await idbWrite(ops); S.co = {...DEFAULT_CO}; S.parties = {}; S.items = {}; S.docs = {}; toast("Database erased"); render();
+  };
+  const dbi = $("#dbinfo"); if (dbi && navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(e => { dbi.textContent = `Space used by this app: ${(e.usage/1048576).toFixed(1)} MB`; }).catch(()=>{});
+  const imp = $("#imp"); if (imp) imp.onchange = async () => {
+    const f = imp.files[0]; if (!f) return;
+    try {
+      const o = JSON.parse(await f.text()); if (o.app !== "rsf-billing") throw 0;
+      const n = Object.keys(o.docs||{}).length;
+      if (!(await confirmBox(`Restore ${n} documents, ${Object.keys(o.parties||{}).length} parties and ${Object.keys(o.items||{}).length} items? Records with the same ID are overwritten.`, "Restore"))) return;
+      toast("Restoring…");
+      if (MODE === "idb") { await idbImport(o); await idbLoad(); }
+      else { if (o.co) await put("config","company",{...o.co}); for (const col of ["parties","items","docs"]) for (const [id, val] of Object.entries(o[col]||{})) await put(col, id, val); }
+      toast("Backup restored"); render();
+    } catch(e) { toast("That file is not a backup from this app."); }
+    imp.value = "";
+  };
+}
+
+/* ---------- GST reports ---------- */
+const GSTIN_RE = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+const validGstin = g => GSTIN_RE.test(String(g||"").toUpperCase().trim());
+const UQC = {PCS:"PCS", NOS:"NOS", KG:"KGS", KGS:"KGS", MTR:"MTR", RMT:"MTR", "SQ.FT":"SQF", "SQ.MTR":"SQM", SET:"SET", TON:"TON", MT:"MTS", LTR:"LTR"};
+const uqcOf = l => String(l.hsn||"").startsWith("99") ? "NA" : (UQC[String(l.unit||"").toUpperCase().trim()] || "OTH");
+const GST_PERIOD = {type:"month", key:null, sub:"r1"};
+function posOf(d){
+  const st = d.party?.gstin ? stateOfGstin(d.party.gstin) : null; if (st) return st;
+  const nm = String(d.pos || S.co.state).trim().toLowerCase();
+  const code = Object.keys(STATES).find(k => STATES[k].toLowerCase() === nm);
+  return code ? {code, name: STATES[code]} : {code: S.co.stateCode, name: S.co.state};
+}
+const splitTax = (taxable, rate, inter) => { const t = r2(taxable * num(rate) / 100); return inter ? {i:t, c:0, s:0} : {i:0, c:r2(t/2), s:r2(t - r2(t/2))}; };
+const addT = (a, b) => { a.taxable = r2((a.taxable||0) + (b.taxable||0)); a.i = r2((a.i||0) + (b.i||0)); a.c = r2((a.c||0) + (b.c||0)); a.s = r2((a.s||0) + (b.s||0)); return a; };
+const zero = () => ({taxable:0, i:0, c:0, s:0});
+function rateGroups(d){
+  const g = {}; calc(d).lines.forEach(l => { const k = String(num(l.gst)); g[k] = addT(g[k] || zero(), {taxable: l.taxable, ...splitTax(l.taxable, l.gst, !!d.igst)}); });
+  return g;
+}
+function periods(){
+  const now = new Date(); const fy = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  const out = {month:[], quarter:[], fy:[]};
+  const mn = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  for (let y = fy; y >= fy - 1; y--) {
+    for (let m = 14; m >= 3; m--) { const yy = m > 11 ? y + 1 : y, mm = m % 12; const s = new Date(yy, mm, 1); if (s > now) continue;
+      out.month.push({key:`m${yy}-${pad2(mm+1)}`, label:`${mn[mm]} ${yy}`, from: iso(s), to: iso(new Date(yy, mm+1, 0))}); }
+    [[3,"Q1 Apr–Jun"],[6,"Q2 Jul–Sep"],[9,"Q3 Oct–Dec"],[12,"Q4 Jan–Mar"]].reverse().forEach(([m,l]) => { const yy = m > 11 ? y + 1 : y, mm = m % 12; const s = new Date(yy, mm, 1); if (s > now) return;
+      out.quarter.push({key:`q${y}-${m}`, label:`${l} ${y}-${String(y+1).slice(2)}`, from: iso(s), to: iso(new Date(yy, mm+3, 0))}); });
+    out.fy.push({key:`f${y}`, label:`FY ${y}-${String(y+1).slice(2)}`, from:`${y}-04-01`, to:`${y+1}-03-31`});
+  }
+  return out;
+}
+function currentPeriod(){
+  const P = periods(); const list = P[GST_PERIOD.type];
+  if (!GST_PERIOD.key || !list.find(p => p.key === GST_PERIOD.key)) GST_PERIOD.key = (GST_PERIOD.type === "month" ? (list[1] || list[0]) : list[0]).key; // default: last completed month
+  return list.find(p => p.key === GST_PERIOD.key);
+}
+function gstr1(P){
+  const inv = Object.values(S.docs).filter(d => d.type === "INV" && d.date >= P.from && d.date <= P.to);
+  const live = inv.filter(d => !d.cancelled);
+  const r = {b2b:[], b2cl:[], b2cs:{}, nil:{interReg:0, intraReg:0, interUnreg:0, intraUnreg:0}, hsnB2B:{}, hsnB2C:{}, docs:{}, warn:[]};
+  live.forEach(d => {
+    const c = calc(d), reg = validGstin(d.party?.gstin), pos = posOf(d), inter = !!d.igst;
+    if (d.party?.gstin && !reg) r.warn.push(`Invoice ${d.no}: GSTIN “${d.party.gstin}” looks invalid, so it is reported as B2C.`);
+    if (!inter && pos.code !== S.co.stateCode) r.warn.push(`Invoice ${d.no}: place of supply is ${pos.name} but CGST + SGST was charged. Check the IGST setting.`);
+    if (inter && pos.code === S.co.stateCode) r.warn.push(`Invoice ${d.no}: IGST charged on a supply within ${pos.name}. Check the IGST setting.`);
+    Object.entries(rateGroups(d)).forEach(([rate, t]) => {
+      if (num(rate) === 0) { r.nil[(inter ? "inter" : "intra") + (reg ? "Reg" : "Unreg")] += t.taxable; return; }
+      const row = {gstin: reg ? d.party.gstin.toUpperCase() : "", name: d.party?.name || "", no: d.no, date: d.date, value: c.total, pos: `${pos.code}-${pos.name}`, rate: num(rate), ...t};
+      if (reg) r.b2b.push(row);
+      else if (inter && c.total > 100000) r.b2cl.push(row);
+      else { const k = `${pos.code}|${rate}|${inter?"Inter":"Intra"}`; r.b2cs[k] = addT(r.b2cs[k] || {pos: row.pos, rate: num(rate), type: inter ? "Inter-state" : "Intra-state"}, t); }
+    });
+    c.lines.forEach(l => {
+      if (!String(l.hsn||"").trim()) r.warn.push(`Invoice ${d.no}: “${l.name}” has no HSN/SAC code. Add it so Table 12 is complete.`);
+      const hsn = String(l.hsn||"").trim() || "(no HSN)", u = uqcOf(l), k = `${hsn}|${num(l.gst)}|${u}`, tgt = reg ? r.hsnB2B : r.hsnB2C;
+      const t = {taxable: l.taxable, ...splitTax(l.taxable, l.gst, inter)};
+      tgt[k] = addT(tgt[k] || {hsn, desc: l.name, uqc: u, rate: num(l.gst), qty: 0}, t); tgt[k].qty = r2(tgt[k].qty + (u === "NA" ? 0 : num(l.qty)));
+    });
+  });
+  inv.forEach(d => {
+    const m = String(d.no).match(/^(.*?)(\d+)$/); const pre = m ? m[1] : d.no, n = m ? parseInt(m[2], 10) : null;
+    const g = r.docs[pre] = r.docs[pre] || {series: pre, from: null, to: null, fromN: Infinity, toN: -Infinity, total: 0, cancelled: 0};
+    g.total++; if (d.cancelled) g.cancelled++;
+    if (n !== null) { if (n < g.fromN) { g.fromN = n; g.from = d.no; } if (n > g.toN) { g.toN = n; g.to = d.no; } } else { g.from = g.from || d.no; g.to = d.no; }
+  });
+  r.warn = [...new Set(r.warn)];
+  const sum = rows => rows.reduce((a, x) => addT(a, x), zero());
+  r.tot = {b2b: sum(r.b2b), b2cl: sum(r.b2cl), b2cs: sum(Object.values(r.b2cs)), hsn: sum([...Object.values(r.hsnB2B), ...Object.values(r.hsnB2C)])};
+  r.tot.all = addT(addT(addT(zero(), r.tot.b2b), r.tot.b2cl), r.tot.b2cs);
+  r.count = {b2b: new Set(r.b2b.map(x => x.no)).size, b2cl: new Set(r.b2cl.map(x => x.no)).size, inv: live.length, cancelled: inv.length - live.length};
+  return r;
+}
+function setoff(L, C){
+  const rem = {...L}, cr = {...C}, u = {i:{i:0,c:0,s:0}, c:{i:0,c:0,s:0}, s:{i:0,c:0,s:0}};
+  const use = (f, t, cap = Infinity) => { const a = r2(Math.min(cr[f], rem[t], cap)); if (a > 0) { cr[f] = r2(cr[f] - a); rem[t] = r2(rem[t] - a); u[f][t] = r2(u[f][t] + a); } };
+  use("i","i");
+  use("i","c", Math.max(0, rem.c - cr.c)); use("i","s", Math.max(0, rem.s - cr.s)); use("i","c"); use("i","s");
+  use("c","c"); use("c","i"); use("s","s"); use("s","i");
+  return {u, cash: rem, balance: cr};
+}
+function gstr3b(P){
+  const r1 = gstr1(P);
+  const out = r1.tot.all, nilOut = r2(Object.values(r1.nil).reduce((a, b) => a + b, 0));
+  const inter32 = {};
+  [...r1.b2cl, ...Object.values(r1.b2cs).filter(x => x.type === "Inter-state")].forEach(x => { inter32[x.pos] = addT(inter32[x.pos] || {pos: x.pos}, x); });
+  const pur = Object.values(S.docs).filter(d => d.type === "PUR" && d.date >= P.from && d.date <= P.to && !d.cancelled);
+  const rcm = zero(), itcOther = zero(), noItc = zero(), exempt = {inter:0, intra:0}, reg = [], warn = [];
+  pur.forEach(d => {
+    const ok = validGstin(d.party?.gstin);
+    Object.entries(rateGroups(d)).forEach(([rate, t]) => {
+      if (num(rate) === 0) { exempt[d.igst ? "inter" : "intra"] += t.taxable; return; }
+      if (d.rcm) addT(rcm, t); else if (ok) addT(itcOther, t); else addT(noItc, t);
+    });
+    if (!d.rcm && !ok && calc(d).tax > 0) warn.push(`Purchase ${d.no} from ${d.party?.name}: no valid supplier GSTIN, so its GST is not counted as ITC.`);
+    const g = Object.values(rateGroups(d)).reduce((a, x) => addT(a, x), zero());
+    reg.push({d, ...g, ok});
+  });
+  const itc = addT(addT(zero(), rcm), itcOther);
+  const so = setoff({i: out.i, c: out.c, s: out.s}, {i: itc.i, c: itc.c, s: itc.s});
+  return {r1, out, nilOut, inter32: Object.values(inter32), rcm, itcOther, itc, noItc, exempt, reg, warn, so,
+    cash: {i: r2(so.cash.i + rcm.i), c: r2(so.cash.c + rcm.c), s: r2(so.cash.s + rcm.s)}};
+}
+function csvSave(name, head, rows){
+  const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
+  const text = [head, ...rows].map(r => r.map(q).join(",")).join("\r\n");
+  saveFile(name, new Blob(["﻿" + text], {type:"text/csv"}));
+}
+function tbl(head, rows, foot, csv){
+  const right = new Set(head.map((h, i) => /taxable|igst|cgst|sgst|value|qty|rate|amount|total|cancel|net|count|cess|tax/i.test(h) ? i : -1));
+  return `<div class="tablewrap"><table class="list gst"><thead><tr>${head.map((h,i) => `<th class="${right.has(i)?"r":""}">${h}</th>`).join("")}</tr></thead><tbody>
+    ${rows.length ? rows.map(r => `<tr>${r.map((v,i) => `<td class="${right.has(i)?"r num":""}">${v}</td>`).join("")}</tr>`).join("") : `<tr><td colspan="${head.length}" class="muted">No entries in this period</td></tr>`}
+    ${foot && rows.length ? `<tr class="ft">${foot.map((v,i) => `<td class="${right.has(i)?"r num":""}">${v}</td>`).join("")}</tr>` : ""}</tbody></table></div>
+    ${csv && rows.length ? `<div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn ghost small" data-csv="${csv}">Download CSV</button></div>` : ""}`;
+}
+function renderGST(m){
+  const P = currentPeriod(), all = periods();
+  const v = GST_PERIOD.sub;
+  const g = gstr3b(P), r1 = g.r1;
+  const f = n => fmt(n);
+  const sec = (id, title, sub, body) => `<section class="panel pad stack" id="${id}"><div><h3>${title}</h3>${sub?`<div class="muted small">${sub}</div>`:""}</div>${body}</section>`;
+  const tr = t => [f(t.taxable), f(t.i), f(t.c), f(t.s)];
+  let body = "";
+  if (v === "r1") {
+    const sumRows = [
+      ["4A · B2B invoices", r1.count.b2b, ...tr(r1.tot.b2b)],
+      ["5 · B2C Large (inter-state above ₹1 lakh)", r1.count.b2cl, ...tr(r1.tot.b2cl)],
+      ["7 · B2C Small", Object.keys(r1.b2cs).length + " rows", ...tr(r1.tot.b2cs)],
+      ["8 · Nil rated", "", f(Object.values(r1.nil).reduce((a,b)=>a+b,0)), "0", "0", "0"],
+      ["12 · HSN summary", Object.keys(r1.hsnB2B).length + Object.keys(r1.hsnB2C).length + " rows", ...tr(r1.tot.hsn)]];
+    body = sec("s1","GSTR-1 summary", `${r1.count.inv} invoices in period${r1.count.cancelled?` · ${r1.count.cancelled} cancelled (excluded)`:""} · Total tax ${money(r2(r1.tot.all.i + r1.tot.all.c + r1.tot.all.s))}`,
+        tbl(["Table","Count","Taxable","IGST","CGST","SGST"], sumRows, ["Total (4A + 5 + 7)", "", ...tr(r1.tot.all)]))
+      + sec("s4a","Table 4A · B2B supplies", "Invoice-wise, one row per GST rate. Reverse charge: N.",
+        tbl(["GSTIN of recipient","Receiver name","Invoice no.","Date","Invoice value","Place of supply","Rate %","Taxable","IGST","CGST","SGST"],
+          r1.b2b.map(x => [esc(x.gstin), esc(x.name), esc(x.no), dmy(x.date), f(x.value), esc(x.pos), f(x.rate), ...tr(x)]), ["Total","","","","","","",...tr(r1.tot.b2b)], "b2b"))
+      + sec("s5","Table 5 · B2C Large", "Inter-state invoices to unregistered buyers above ₹1,00,000.",
+        tbl(["Invoice no.","Date","Invoice value","Place of supply","Rate %","Taxable","IGST"], r1.b2cl.map(x => [esc(x.no), dmy(x.date), f(x.value), esc(x.pos), f(x.rate), f(x.taxable), f(x.i)]), null, "b2cl"))
+      + sec("s7","Table 7 · B2C Small", "Unregistered buyers, grouped by place of supply and rate.",
+        tbl(["Type","Place of supply","Rate %","Taxable","IGST","CGST","SGST"], Object.values(r1.b2cs).map(x => [x.type, esc(x.pos), f(x.rate), ...tr(x)]), ["Total","","",...tr(r1.tot.b2cs)], "b2cs"))
+      + sec("s8","Table 8 · Nil rated, exempted and non-GST", "From items billed at 0% GST.",
+        tbl(["Description","Nil rated"], [["Inter-state to registered persons", f(r1.nil.interReg)],["Intra-state to registered persons", f(r1.nil.intraReg)],["Inter-state to unregistered persons", f(r1.nil.interUnreg)],["Intra-state to unregistered persons", f(r1.nil.intraUnreg)]]))
+      + ["hsnB2B","hsnB2C"].map(k => sec("s12"+k, `Table 12 · HSN summary — ${k==="hsnB2B"?"B2B":"B2C"}`, "Services (SAC 99…) use UQC “NA” with quantity 0.",
+        tbl(["HSN/SAC","Description","UQC","Total qty","Rate %","Taxable","IGST","CGST","SGST","Total value"],
+          Object.values(r1[k]).sort((a,b) => a.hsn.localeCompare(b.hsn)).map(x => [esc(x.hsn), esc(x.desc), x.uqc, f(x.qty), f(x.rate), ...tr(x), f(r2(x.taxable + x.i + x.c + x.s))]), null, k))).join("")
+      + sec("s13","Table 13 · Documents issued", "Invoices for outward supply, by number series.",
+        tbl(["Series","From","To","Total issued","Cancelled","Net issued"], Object.values(r1.docs).map(x => [esc(x.series||"—"), esc(x.from), esc(x.to), x.total, x.cancelled, x.total - x.cancelled]), null, "docs"));
+  } else if (v === "r3b") {
+    const so = g.so;
+    body = sec("t31","3.1 · Outward supplies and inward supplies liable to reverse charge", "",
+        tbl(["Nature of supplies","Taxable","IGST","CGST","SGST","Cess"], [
+          ["(a) Outward taxable supplies (other than zero, nil and exempted)", ...tr(g.out), "0"],
+          ["(b) Outward zero-rated supplies", "0","0","0","0","0"],
+          ["(c) Other outward supplies (nil rated, exempted)", f(g.nilOut), "0","0","0","0"],
+          ["(d) Inward supplies liable to reverse charge", ...tr(g.rcm), "0"],
+          ["(e) Non-GST outward supplies", "0","0","0","0","0"]]))
+      + sec("t32","3.2 · Inter-state supplies to unregistered persons", "Shown under 3.1(a) above.",
+        tbl(["Place of supply","Taxable","IGST"], g.inter32.map(x => [esc(x.pos), f(x.taxable), f(x.i)])))
+      + sec("t4","4 · Eligible ITC", "From purchase bills with a valid supplier GSTIN. Match against your GSTR-2B before filing.",
+        tbl(["Details","IGST","CGST","SGST","Cess"], [
+          ["(A)(3) Inward supplies liable to reverse charge", f(g.rcm.i), f(g.rcm.c), f(g.rcm.s), "0"],
+          ["(A)(5) All other ITC", f(g.itcOther.i), f(g.itcOther.c), f(g.itcOther.s), "0"],
+          ["(B) ITC reversed", "0","0","0","0"],
+          ["(C) Net ITC available", f(g.itc.i), f(g.itc.c), f(g.itc.s), "0"]]) + (g.noItc.taxable ? `<div class="muted small">Not counted: ${money(r2(g.noItc.i+g.noItc.c+g.noItc.s))} GST on purchases without a valid supplier GSTIN.</div>` : ""))
+      + sec("t5","5 · Exempt, nil rated and non-GST inward supplies", "",
+        tbl(["Nature of supplies","Inter-state","Intra-state"], [["Nil rated / exempt purchases", f(g.exempt.inter), f(g.exempt.intra)]]))
+      + sec("t6","6.1 · Payment of tax", "Credit used in the legal order: IGST first (against IGST, then CGST/SGST), then CGST and SGST. Reverse charge tax is always paid in cash.",
+        tbl(["Tax","Payable","Paid via IGST credit","Paid via CGST credit","Paid via SGST credit","Cash (forward charge)","Cash (reverse charge)","Total cash"], [
+          ["IGST", f(r2(g.out.i + g.rcm.i)), f(so.u.i.i), f(so.u.c.i), f(so.u.s.i), f(so.cash.i), f(g.rcm.i), f(g.cash.i)],
+          ["CGST", f(r2(g.out.c + g.rcm.c)), f(so.u.i.c), f(so.u.c.c), "—", f(so.cash.c), f(g.rcm.c), f(g.cash.c)],
+          ["SGST", f(r2(g.out.s + g.rcm.s)), f(so.u.i.s), "—", f(so.u.s.s), f(so.cash.s), f(g.rcm.s), f(g.cash.s)]],
+          ["Total", f(r2(g.out.i+g.out.c+g.out.s+g.rcm.i+g.rcm.c+g.rcm.s)), "", "", "", f(r2(so.cash.i+so.cash.c+so.cash.s)), f(r2(g.rcm.i+g.rcm.c+g.rcm.s)), f(r2(g.cash.i+g.cash.c+g.cash.s))])
+        + `<div class="kpis"><div class="kpi"><label>GST to pay in cash</label><div class="v">${money(r2(g.cash.i+g.cash.c+g.cash.s))}</div><div class="s">Before interest and late fee</div></div>
+           <div class="kpi"><label>ITC carried forward</label><div class="v">${money(r2(so.balance.i+so.balance.c+so.balance.s))}</div><div class="s">IGST ${f(so.balance.i)} · CGST ${f(so.balance.c)} · SGST ${f(so.balance.s)}</div></div></div>`);
+  } else {
+    const rows = g.reg.sort((a,b) => a.d.date.localeCompare(b.d.date)).map(x => [dmy(x.d.date), esc(x.d.no), esc(x.d.party?.name), esc(x.d.party?.gstin||"—"), ...tr(x), x.d.rcm ? "Yes" : "No", x.d.rcm ? "RCM" : x.ok ? "Eligible" : "No GSTIN"]);
+    const tot = g.reg.reduce((a,x) => addT(a, x), zero());
+    body = sec("pr","Purchase register (ITC)", "Every supplier bill in the period. Tick it against GSTR-2B on the portal.",
+      tbl(["Bill date","Bill no.","Supplier","GSTIN","Taxable","IGST","CGST","SGST","Reverse charge","ITC"], rows, ["Total","","","",...tr(tot),"",""], "pur"));
+  }
+  const warn = v === "r1" ? r1.warn : v === "r3b" ? [...r1.warn.filter(w => !/HSN/.test(w)), ...g.warn] : g.warn;
+  m.innerHTML = `<div class="stack">
+    <div class="row spread"><h1>GST reports</h1><span class="muted small">${esc(S.co.gstin)} · ${esc(P.label)} · ${dmy(P.from)} to ${dmy(P.to)}</span></div>
+    <div class="row">
+      <div class="seg" role="tablist">${[["r1","GSTR-1"],["r3b","GSTR-3B"],["pr","Purchase register"]].map(([k,l]) => `<button data-sub="${k}" aria-pressed="${v===k}">${l}</button>`).join("")}</div>
+      <select id="ptype" style="width:auto">${[["month","Monthly"],["quarter","Quarterly"],["fy","Financial year"]].map(([k,l]) => `<option value="${k}" ${GST_PERIOD.type===k?"selected":""}>${l}</option>`).join("")}</select>
+      <select id="pkey" style="width:auto">${all[GST_PERIOD.type].map(p => `<option value="${p.key}" ${p.key===P.key?"selected":""}>${p.label}</option>`).join("")}</select>
+    </div>
+    ${warn.length ? `<div class="banner"><b>Check before filing (${warn.length})</b><ul style="margin:6px 0 0;padding-left:18px">${warn.slice(0,12).map(w => `<li>${esc(w)}</li>`).join("")}${warn.length>12?`<li>…and ${warn.length-12} more</li>`:""}</ul></div>` : ""}
+    ${loading() ? `<div class="empty">Loading…</div>` : body}
+    <div class="muted small">Figures come from the bills saved here. Cancelled invoices and quotations are excluded. Credit and debit notes, amendments, interest and late fee are not included.</div>
+  </div>`;
+  m.querySelectorAll("[data-sub]").forEach(b => b.onclick = () => { GST_PERIOD.sub = b.dataset.sub; renderGST(m); });
+  $("#ptype", m).onchange = e => { GST_PERIOD.type = e.target.value; GST_PERIOD.key = null; renderGST(m); };
+  $("#pkey", m).onchange = e => { GST_PERIOD.key = e.target.value; renderGST(m); };
+  const tag = P.label.replace(/[^\w-]+/g, "-");
+  const csv = {
+    b2b: () => csvSave(`GSTR1 B2B ${tag}.csv`, ["GSTIN/UIN of Recipient","Receiver Name","Invoice Number","Invoice date","Invoice Value","Place Of Supply","Reverse Charge","Invoice Type","Rate","Taxable Value","Integrated Tax","Central Tax","State/UT Tax","Cess Amount"], r1.b2b.map(x => [x.gstin, x.name, x.no, dmy(x.date), x.value, x.pos, "N", "Regular B2B", x.rate, x.taxable, x.i, x.c, x.s, 0])),
+    b2cl: () => csvSave(`GSTR1 B2CL ${tag}.csv`, ["Invoice Number","Invoice date","Invoice Value","Place Of Supply","Rate","Taxable Value","Integrated Tax","Cess Amount"], r1.b2cl.map(x => [x.no, dmy(x.date), x.value, x.pos, x.rate, x.taxable, x.i, 0])),
+    b2cs: () => csvSave(`GSTR1 B2CS ${tag}.csv`, ["Type","Place Of Supply","Rate","Taxable Value","Integrated Tax","Central Tax","State/UT Tax","Cess Amount"], Object.values(r1.b2cs).map(x => ["OE", x.pos, x.rate, x.taxable, x.i, x.c, x.s, 0])),
+    hsnB2B: () => csvSave(`GSTR1 HSN B2B ${tag}.csv`, ["HSN","Description","UQC","Total Quantity","Total Value","Rate","Taxable Value","Integrated Tax Amount","Central Tax Amount","State/UT Tax Amount","Cess Amount"], Object.values(r1.hsnB2B).map(x => [x.hsn, x.desc, x.uqc, x.qty, r2(x.taxable+x.i+x.c+x.s), x.rate, x.taxable, x.i, x.c, x.s, 0])),
+    hsnB2C: () => csvSave(`GSTR1 HSN B2C ${tag}.csv`, ["HSN","Description","UQC","Total Quantity","Total Value","Rate","Taxable Value","Integrated Tax Amount","Central Tax Amount","State/UT Tax Amount","Cess Amount"], Object.values(r1.hsnB2C).map(x => [x.hsn, x.desc, x.uqc, x.qty, r2(x.taxable+x.i+x.c+x.s), x.rate, x.taxable, x.i, x.c, x.s, 0])),
+    docs: () => csvSave(`GSTR1 Documents ${tag}.csv`, ["Nature of Document","Sr. No. From","Sr. No. To","Total Number","Cancelled"], Object.values(r1.docs).map(x => ["Invoices for outward supply", x.from, x.to, x.total, x.cancelled])),
+    pur: () => csvSave(`Purchase register ${tag}.csv`, ["Bill date","Bill no","Supplier","GSTIN","Taxable","IGST","CGST","SGST","Reverse charge","ITC"], g.reg.map(x => [dmy(x.d.date), x.d.no, x.d.party?.name, x.d.party?.gstin||"", x.taxable, x.i, x.c, x.s, x.d.rcm?"Y":"N", x.d.rcm?"RCM":x.ok?"Eligible":"No GSTIN"]))
+  };
+  m.querySelectorAll("[data-csv]").forEach(b => b.onclick = () => csv[b.dataset.csv]());
+}
+
+/* ---------- PDF ---------- */
+async function saveFile(filename, blob){
+  if (DL) {
+    try { await DL.save({filename, data: blob}); toast("Saved"); }
+    catch(e) { if (e && e.code !== "declined") toast("Download is not available here."); }
+    return;
+  }
+  if (window.claude) { toast("Download is not available in this view."); return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function downloadPDF(d){
+  if (!window.jspdf) return toast("PDF tool did not load. Check your connection and reload.");
+  try {
+    const pdf = buildPDF(d);
+    const name = `${TYPES[d.type].short} ${fileSafe(d.no)} ${fileSafe(d.party?.name||"")}.pdf`;
+    saveFile(name, pdf.output("blob"));
+  } catch(e) { console.error(e); toast("Could not make the PDF."); }
+}
+function buildPDF(d){
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({unit:"mm", format:"a4"});
+  const T = TYPES[d.type], c = calc(d), co = S.co, p = d.party || {}, isPur = d.type === "PUR";
+  const RED = [196,22,28], L = 12, R = 198, W = R - L;
+  const rs = n => "Rs. " + fmt(n);
+  const tx = (s, x, y, o={}) => pdf.text(String(s ?? ""), x, y, o);
+  pdf.setFont("helvetica","bold"); pdf.setFontSize(10); pdf.setTextColor(20);
+  const title = d.type === "INV" ? "TAX INVOICE" : d.type === "QTN" ? "QUOTATION" : "PURCHASE BILL";
+  tx(title, L, 12);
+  if (d.cancelled) { pdf.setTextColor(...RED); pdf.setFontSize(26); pdf.text("CANCELLED", 105, 150, {align:"center", angle:30}); pdf.setFontSize(10); pdf.setTextColor(20); }
+  const tag = d.type==="INV" ? "ORIGINAL FOR RECIPIENT" : isPur ? "PURCHASE RECORD" : "ESTIMATE";
+  const tw = pdf.getTextWidth(title);
+  pdf.setFont("helvetica","normal"); pdf.setFontSize(8); pdf.setTextColor(130);
+  const gw = pdf.getTextWidth(tag) + 4; pdf.setDrawColor(150); pdf.rect(L + tw + 3, 8.6, gw, 4.8); tx(tag, L + tw + 5, 12);
+  let y = 18;
+  if (isPur) {
+    pdf.setFont("helvetica","bold"); pdf.setFontSize(17); pdf.setTextColor(...RED); tx(p.name, L, y + 6);
+    pdf.setFont("helvetica","normal"); pdf.setFontSize(9); pdf.setTextColor(30);
+    let yy = y + 12; pdf.splitTextToSize(p.address||"", W).forEach(s => { tx(s, L, yy); yy += 4.2; });
+    if (p.gstin) { tx("GSTIN: " + p.gstin, L, yy); yy += 4.2; }
+    y = Math.max(yy, y + 18);
+  } else {
+    try { pdf.addImage(LOGO, "JPEG", L + 3, y, 28, 30); } catch(e) {}
+    const x = L + 38;
+    pdf.setFont("helvetica","bold"); pdf.setFontSize(19); pdf.setTextColor(...RED); tx(co.name, x, y + 8);
+    pdf.setFont("helvetica","normal"); pdf.setFontSize(9); pdf.setTextColor(30);
+    let yy = y + 14; pdf.splitTextToSize(co.address||"", R - x).forEach(s => { tx(s, x, yy); yy += 4.2; });
+    yy += 0.8;
+    const kv = (k, v, xx) => { pdf.setFont("helvetica","bold"); tx(k, xx, yy); const kw = pdf.getTextWidth(k + " "); pdf.setFont("helvetica","normal"); tx(v, xx + kw, yy); return xx + kw + pdf.getTextWidth(v) + 7; };
+    let xx = kv("Mobile:", co.mobile, x); xx = kv("GSTIN:", co.gstin, xx); kv("PAN Number:", co.pan, xx); yy += 4.4;
+    kv("Email:", co.email, x); yy += 4;
+    y = Math.max(yy, y + 32);
+  }
+  pdf.setFillColor(...RED); pdf.rect(L, y, W, 2, "F"); y += 2;
+  pdf.setFillColor(230,230,230); pdf.rect(L, y, W, 10, "F");
+  pdf.setFontSize(9.5); pdf.setTextColor(20);
+  const band = (k, v, xx, align) => { pdf.setFont("helvetica","bold"); const s = k + " "; if (align === "right") { pdf.setFont("helvetica","normal"); const vw = pdf.getTextWidth(v); tx(v, xx, y + 6.4, {align:"right"}); pdf.setFont("helvetica","bold"); tx(s, xx - vw, y + 6.4, {align:"right"}); } else { tx(s, xx, y + 6.4); const kw = pdf.getTextWidth(s); pdf.setFont("helvetica","normal"); tx(v, xx + kw, y + 6.4); } };
+  band(T.noLabel + ":", d.no, L + 4);
+  band((d.type === "QTN" ? "Date" : T.dateLabel) + ":", dmy(d.date), L + 76);
+  if (d.due) band(T.due + ":", dmy(d.due), R - 4, "right");
+  y += 16;
+  const block = (label, x, o, width) => {
+    let yy = y; pdf.setFont("helvetica","normal"); pdf.setFontSize(9.5); pdf.setTextColor(20); tx(label, x, yy); yy += 6;
+    pdf.setFont("helvetica","bold"); pdf.setFontSize(10); pdf.splitTextToSize(o.name||"", width).forEach(s => { tx(s, x, yy); yy += 4.6; });
+    pdf.setFont("helvetica","normal"); pdf.setFontSize(9);
+    pdf.splitTextToSize(o.address||"", width).forEach(s => { tx(s, x, yy); yy += 4.2; });
+    if (o.gstin) { tx("GSTIN:   " + o.gstin, x, yy); yy += 4.2; }
+    if (o.pan) { tx("PAN Number:  " + o.pan, x, yy); yy += 4.2; }
+    if (o.pos) { tx("Place of Supply:  " + o.pos, x, yy); yy += 4.2; }
+    return yy;
+  };
+  let y1, y2 = y;
+  if (isPur) { y1 = block("BILLED TO (US)", L, {name:co.name, address:co.address, gstin:co.gstin}, 88); if (d.ref) y2 = block("OUR ENTRY REF.", L + 98, {name:d.ref}, 88); }
+  else {
+    y1 = block(T.partyLabel.toUpperCase(), L, {...p, pos:d.pos}, 88);
+    if (d.type === "INV" || d.shipSame === false) { const ship = d.shipSame !== false ? {name:p.name, address:p.address} : {name:d.shipName, address:d.shipAddress}; y2 = block("SHIP TO", L + 98, ship, 88); }
+  }
+  y = Math.max(y1, y2) + 3;
+
+  const showHsn = c.lines.some(l => l.hsn);
+  const head = ["ITEMS", ...(showHsn ? ["HSN/SAC"] : []), "QTY.", "RATE", "TAX", "AMOUNT"];
+  const body = c.lines.map(l => [ [l.name, ...(l.desc ? l.desc.split(/\n/) : [])].join("\n"), ...(showHsn ? [l.hsn] : []), `${fmt(l.qty)} ${l.unit||""}`.trim(), fmt(l.rate), `${fmt(l.tax)}\n(${fmt(l.gst)}%)`, fmt(l.total)]);
+  body.push(["SUBTOTAL", ...(showHsn ? [""] : []), fmt(c.qty), "", rs(c.tax), rs(c.gross)]);
+  const last = body.length - 1;
+  const colStyles = {}; const n = head.length;
+  colStyles[0] = {halign:"left", cellWidth:"auto"};
+  for (let i = 1; i < n; i++) colStyles[i] = {halign:"right", cellWidth: i === n-1 ? 28 : (showHsn && i === 1 ? 20 : 24)};
+  pdf.autoTable({
+    startY: y, head: [head], body, theme: "plain", margin: {left: L, right: 210 - R},
+    styles: {font:"helvetica", fontSize:8.6, textColor:20, cellPadding:{top:2.6,bottom:2.6,left:2.5,right:2.5}, valign:"top"},
+    headStyles: {fontStyle:"normal", fontSize:9.5, halign:"right"},
+    columnStyles: colStyles,
+    didParseCell: h => { if (h.section === "head" && h.column.index === 0) h.cell.styles.halign = "left"; if (h.section === "body" && h.column.index === 0 && h.row.index !== last) h.cell.styles.fontSize = 9.5; if (h.section === "body" && h.row.index === last) h.cell.styles.fontStyle = "bold"; },
+    willDrawCell: h => {
+      if (h.section === "body" && h.row.index !== last && (h.column.index === 0 || h.column.index === n - 2)) { h.cell._lines = h.cell.text.slice(); h.cell.text = []; }
+    },
+    didDrawCell: h => {
+      const cl = h.cell;
+      if (h.section === "head" && h.column.index === 0) { pdf.setDrawColor(...RED); pdf.setLineWidth(0.6); pdf.line(L, cl.y, R, cl.y); pdf.line(L, cl.y + cl.height, R, cl.y + cl.height); }
+      if (h.section === "body" && h.column.index === 0) {
+        if (h.row.index === last) { pdf.setDrawColor(...RED); pdf.setLineWidth(0.6); pdf.line(L, cl.y, R, cl.y); pdf.line(L, cl.y + cl.height, R, cl.y + cl.height); }
+        else { pdf.setDrawColor(221); pdf.setLineWidth(0.2); pdf.line(L, cl.y + cl.height, R, cl.y + cl.height); }
+      }
+      if (cl._lines && h.section === "body" && c.lines[h.row.index]) {
+        const x0 = cl.x + cl.padding("left"), xr = cl.x + cl.width - cl.padding("right"); let yy = cl.y + cl.padding("top") + 2.9;
+        if (h.column.index === 0) {
+          // re-wrap: name on first line(s) in normal 9.5, description smaller
+          const l = c.lines[h.row.index];
+          pdf.setFont("helvetica","normal"); pdf.setFontSize(9.5); pdf.setTextColor(20);
+          pdf.splitTextToSize(l.name, cl.width - 5).forEach(s => { pdf.text(s, x0, yy); yy += 4; });
+          pdf.setFontSize(8); pdf.setTextColor(60);
+          (l.desc ? l.desc.split(/\n/) : []).forEach(par => pdf.splitTextToSize(par, cl.width - 5).forEach(s => { pdf.text(s, x0, yy); yy += 3.6; }));
+        } else {
+          pdf.setFont("helvetica","normal"); pdf.setFontSize(8.6); pdf.setTextColor(20); pdf.text(cl._lines[0] || "", xr, yy, {align:"right"});
+          pdf.setFontSize(7.5); pdf.setTextColor(120); pdf.text(cl._lines[1] || "", xr, yy + 3.6, {align:"right"});
+        }
+        pdf.setTextColor(20);
+      }
+    }
+  });
+  y = pdf.lastAutoTable.finalY + 6;
+  const need = 60; if (y + need > 285) { pdf.addPage(); y = 16; }
+
+  // totals (right) and bank (left)
+  const taxRows = Object.entries(c.byRate).filter(([r]) => num(r) > 0).flatMap(([r,t]) => d.igst ? [[`IGST @${fmt(r)}%`, t]] : [[`CGST @${fmt(num(r)/2)}%`, r2(t/2)], [`SGST @${fmt(num(r)/2)}%`, r2(t - r2(t/2))]]);
+  let yr = y; const xl = 128, xv = R;
+  pdf.setFontSize(9.5); pdf.setTextColor(20); pdf.setFont("helvetica","normal");
+  const trow = (k, v, bold) => { pdf.setFont("helvetica", bold ? "bold" : "normal"); tx(k, xv - 34, yr, {align:"right"}); tx(v, xv, yr, {align:"right"}); yr += 5.4; };
+  trow("Taxable Amount", rs(c.taxable));
+  taxRows.forEach(([k, v]) => trow(k, rs(v)));
+  if (c.roundOff) trow("Round Off", (c.roundOff > 0 ? "+ " : "- ") + rs(Math.abs(c.roundOff)));
+  pdf.setDrawColor(40); pdf.setLineWidth(0.3); pdf.line(xl, yr - 3.6, R, yr - 3.6);
+  yr += 0.6; trow(d.rcm ? "Total (excl. RCM GST)" : "Total Amount", rs(c.total), true);
+  pdf.line(xl, yr - 3.4, R, yr - 3.4); yr += 1.4;
+  if (d.type !== "QTN") { trow((isPur ? "Paid" : "Received") + " Amount", rs(c.received)); if (c.received > 0) trow("Balance", rs(c.balance), true); }
+
+  let yl = y;
+  if (!isPur) {
+    pdf.setFont("helvetica","bold"); pdf.setFontSize(9.5); tx("BANK DETAILS", L, yl); yl += 5.4;
+    pdf.setFontSize(9.2);
+    [["Name:", co.bankName], ["IFSC Code:", co.ifsc], ["Account No:", co.account], ["Bank:", co.bank]].forEach(([k, v]) => {
+      pdf.setFont("helvetica","normal"); tx(k, L, yl); const ls = pdf.splitTextToSize(v||"", 64); ls.forEach((s, i) => tx(s, L + 30, yl + i * 4.2)); yl += 4.2 * ls.length + 1;
+    });
+  }
+  y = Math.max(yl, yr) + 5;
+  // terms (left) + words (right)
+  const termsText = isPur ? (d.notes || "") : (d.terms || "") + (d.notes ? "\n\nNotes:\n" + d.notes : "");
+  const tl = pdf.splitTextToSize(termsText, 98);
+  if (y + Math.min(tl.length * 4 + 10, 60) > 285) { pdf.addPage(); y = 16; }
+  let yt = y;
+  if (termsText) {
+    pdf.setFont("helvetica","bold"); pdf.setFontSize(9.5); tx(isPur ? "NOTES" : "TERMS AND CONDITIONS", L, yt); yt += 5.4;
+    pdf.setFont("helvetica","normal"); pdf.setFontSize(8.8);
+    tl.forEach(s => { if (yt > 287) { pdf.addPage(); yt = 16; } tx(s, L, yt); yt += 4; });
+  }
+  pdf.setFont("helvetica","bold"); pdf.setFontSize(9.5); tx("Total Amount (in words)", R, y, {align:"right"});
+  pdf.setFont("helvetica","normal"); pdf.setFontSize(9.2);
+  let yw = y + 5.4; pdf.splitTextToSize(amountWords(c.total), 84).forEach(s => { tx(s, R, yw, {align:"right"}); yw += 4.2; });
+  if (!isPur) {
+    let ys = Math.max(yw + 14, Math.min(yt, 270) - 4); if (ys > 278) ys = 278;
+    pdf.setFont("helvetica","bold"); tx("For " + co.name, R, ys, {align:"right"});
+    pdf.setFont("helvetica","normal"); tx("Authorised Signatory", R, ys + 14, {align:"right"});
+  }
+  const pages = pdf.getNumberOfPages();
+  if (pages > 1) for (let i = 1; i <= pages; i++) { pdf.setPage(i); pdf.setFontSize(7.5); pdf.setTextColor(140); tx(`${T.short} ${d.no} · Page ${i} of ${pages}`, R, 292, {align:"right"}); }
+  return pdf;
+}
+
+/* ---------- ui bits ---------- */
+let toastT;
+function toast(msg){ let t = $(".toast"); if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role","status"); document.body.appendChild(t); } t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
+function confirmBox(msg, okLabel){
+  return new Promise(res => {
+    const bg = document.createElement("div"); bg.className = "modal-bg";
+    bg.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><div>${esc(msg)}</div><div class="row" style="justify-content:flex-end"><button class="btn" data-x="0">Cancel</button><button class="btn pri" data-x="1">${esc(okLabel)}</button></div></div>`;
+    document.body.appendChild(bg);
+    const done = v => { bg.remove(); res(v); };
+    bg.addEventListener("click", e => { const b = e.target.closest("[data-x]"); if (b) done(b.dataset.x === "1"); else if (e.target === bg) done(false); });
+    bg.querySelector('[data-x="1"]').focus();
+  });
+}
+
+/* ---------- internal database (IndexedDB) ---------- */
+const SEED = {"co": {"account": "80091950211", "address": "Ground, House 662/2, Mauli Nagar, Kamlapur road, Waluj MIDC, Chhatrapati Sambhajinagar, Maharashtra, 431133", "bank": "Maharashtra Gramin Bank, RANJANGAON", "bankName": "M/s NEW R S FABRICATION", "dueDays": 7, "email": "Ramdasdeshmukh74427@gmail.com", "gstin": "27CFXPD4461C1ZC", "ifsc": "MAHG0005138", "invPrefix": "FY2026-27/", "mobile": "8806437912", "name": "New R S Fabrication", "pan": "CFXPD4461C", "qtnPrefix": "QTN/2026-27/", "qtnTerms": "1. Validity:\nThis quotation is valid for 15 days from the date of issue.\n2. Payment Terms:\nPayment is due immediately upon completion of work or as per agreed credit terms.\n3. Udyam Registration Number: UDYAM-MH-04-0182849\n4. Goods and Services:\nGST will be charged as applicable on the final invoice.\n5. Jurisdiction:\nAll disputes are subject to the jurisdiction of the courts in Maharashtra, Aurangabad, India.", "qtnValidDays": 15, "state": "Maharashtra", "stateCode": "27", "terms": "1. Payment Terms:\nPayment is due immediately upon completion of work or as per agreed credit terms.\n2. Udyam Registration Number: UDYAM-MH-04-0182849\n3. Goods and Services:\nThe goods/services provided are subject to GST as applicable and have been charged accordingly.\n4. Jurisdiction:\nAll disputes are subject to the jurisdiction of the courts in Maharashtra, Aurangabad, India.", "udyam": "UDYAM-MH-04-0182849", "updated": 1792557960000}, "parties": {"p_ajanta": {"address": "Gut No. 378, Plot No. 9,10,11, 11 KM Stone, Pune Highway, Village Waluj, Chhatrapati Sambhajinagar, Maharashtra, 431133", "email": "", "gstin": "27AAACA5579P1Z1", "id": "p_ajanta", "name": "AJANTA PHARMA LTD.", "pan": "AAACA5579P", "phone": "", "role": "customer", "state": "Maharashtra", "updated": 1792557960000}}, "items": {"i_repair": {"desc": "", "gst": 18, "hsn": "998711", "id": "i_repair", "name": "Repair & Maintenance Charges", "rate": 0, "unit": "JOB", "updated": 1792558531339}, "i_tank": {"desc": "", "gst": 18, "hsn": "7309", "id": "i_tank", "name": "MS Tank", "rate": 0, "unit": "PCS", "updated": 1792558531339}, "i_electrode": {"desc": "", "gst": 18, "hsn": "8311", "id": "i_electrode", "name": "Welding Electrodes", "rate": 0, "unit": "PCS", "updated": 1792558531339}, "i_sheet": {"desc": "", "gst": 18, "hsn": "7210", "id": "i_sheet", "name": "Roofing Sheet (Colour Coated)", "rate": 0, "unit": "SQ.FT", "updated": 1792558531339}, "i_angle": {"desc": "", "gst": 18, "hsn": "7216", "id": "i_angle", "name": "MS Angle", "rate": 0, "unit": "KG", "updated": 1792558531339}, "i_labsupply": {"desc": "Skilled / unskilled labour, per man-day", "gst": 18, "hsn": "998519", "id": "i_labsupply", "name": "Labour Supply (Manpower)", "rate": 0, "unit": "MANDAY", "updated": 1792558531339}, "i_flat": {"desc": "", "gst": 18, "hsn": "7211", "id": "i_flat", "name": "MS Flat Patti", "rate": 0, "unit": "KG", "updated": 1792558531339}, "i_rack": {"desc": "", "gst": 18, "hsn": "9403", "id": "i_rack", "name": "MS Storage Rack", "rate": 0, "unit": "PCS", "updated": 1792558531339}, "i_gate": {"desc": "", "gst": 18, "hsn": "7308", "id": "i_gate", "name": "MS Gate", "rate": 0, "unit": "PCS", "updated": 1792558531339}, "i_stair": {"desc": "", "gst": 18, "hsn": "7308", "id": "i_stair", "name": "MS Staircase / Platform", "rate": 0, "unit": "KG", "updated": 1792558531339}, "i_erect": {"desc": "", "gst": 18, "hsn": "995455", "id": "i_erect", "name": "Structural Steel Erection Charges", "rate": 0, "unit": "KG", "updated": 1792558531339}, "i_weld": {"desc": "", "gst": 18, "hsn": "998873", "id": "i_weld", "name": "Welding Charges", "rate": 0, "unit": "JOB", "updated": 1792558531339}, "i_install": {"desc": "Fixing of fabricated items at site", "gst": 18, "hsn": "998731", "id": "i_install", "name": "Installation Charges", "rate": 0, "unit": "JOB", "updated": 1792558531339}, "i_struct": {"desc": "Shed / frame / column work", "gst": 18, "hsn": "7308", "id": "i_struct", "name": "MS Fabricated Structure", "rate": 0, "unit": "KG", "updated": 1792558531339}, "i_cut": {"desc": "", "gst": 18, "hsn": "998873", "id": "i_cut", "name": "Cutting, Bending & Drilling Charges", "rate": 0, "unit": "JOB", "updated": 1792558531339}, "i_grill": {"desc": "", "gst": 18, "hsn": "7308", "id": "i_grill", "name": "MS Grill / Railing", "rate": 0, "unit": "SQ.FT", "updated": 1792558531339}, "i_shed": {"desc": "", "gst": 18, "hsn": "7308", "id": "i_shed", "name": "Industrial Shed (Supply & Fixing)", "rate": 0, "unit": "SQ.FT", "updated": 1792558531339}, "i_pipe": {"desc": "", "gst": 18, "hsn": "7306", "id": "i_pipe", "name": "MS Square / Rectangular Pipe", "rate": 0, "unit": "KG", "updated": 1792558531339}, "i_ssrail": {"desc": "", "gst": 18, "hsn": "7308", "id": "i_ssrail", "name": "SS Railing", "rate": 0, "unit": "RMT", "updated": 1792558531339}, "i_paintmat": {"desc": "", "gst": 18, "hsn": "3208", "id": "i_paintmat", "name": "Paint & Primer", "rate": 0, "unit": "LTR", "updated": 1792558531339}, "i_msrackdoor": {"desc": "fabrication 4.5 meter * 5 meters 35 × 5 mm Angle\n25 × 3 mm Flat Patti\n20 × 40 mm Square Pipe\nRed Coated color", "gst": 18, "hsn": "7308", "id": "i_msrackdoor", "name": "MS RACK DOOR", "rate": 72600, "unit": "PCS", "updated": 1792558531339}, "i_shutter": {"desc": "", "gst": 18, "hsn": "7308", "id": "i_shutter", "name": "MS Rolling Shutter", "rate": 0, "unit": "SQ.FT", "updated": 1792558531339}, "i_door": {"desc": "", "gst": 18, "hsn": "7308", "id": "i_door", "name": "MS Door", "rate": 0, "unit": "PCS", "updated": 1792558531339}, "i_jobwork": {"desc": "Material supplied by customer", "gst": 18, "hsn": "998873", "id": "i_jobwork", "name": "Job Work - Fabrication on Customer Material", "rate": 0, "unit": "KG", "updated": 1792558531339}, "i_transport": {"desc": "Delivery of material to site", "gst": 18, "hsn": "", "id": "i_transport", "name": "Transportation Charges", "rate": 0, "unit": "JOB", "updated": 1792558531339}, "i_paint": {"desc": "Primer and enamel paint", "gst": 18, "hsn": "998873", "id": "i_paint", "name": "Painting / Coating Charges", "rate": 0, "unit": "SQ.FT", "updated": 1792558531339}, "i_plate": {"desc": "", "gst": 18, "hsn": "7208", "id": "i_plate", "name": "MS Plate / Sheet", "rate": 0, "unit": "KG", "updated": 1792558531339}, "i_lab_fab": {"desc": "Cutting, fitting and welding work", "gst": 18, "hsn": "998873", "id": "i_lab_fab", "name": "Fabrication Labour Charges", "rate": 0, "unit": "JOB", "updated": 1792558531339}}, "docs": {"d_mvhmqnbdbpkp": {"created": 1792558162341, "date": "2026-10-21", "due": "2026-10-28", "id": "d_mvhmqnbdbpkp", "igst": false, "lines": [{"desc": "", "gst": 18, "hsn": "9954", "name": "MS RACK DOOR", "qty": 1, "rate": 72600, "unit": "PCS"}], "no": "FY2026-27/32", "notes": "", "party": {"address": "Gut No. 378, Plot No. 9,10,11, 11 KM Stone, Pune Highway, Village Waluj, Chhatrapati Sambhajinagar, Maharashtra, 431133", "gstin": "27AAACA5579P1Z1", "id": "p_ajanta", "name": "AJANTA PHARMA LTD.", "pan": "AAACA5579P", "phone": ""}, "payments": [], "pos": "Maharashtra", "ref": "", "shipAddress": "", "shipName": "", "shipSame": true, "terms": "1. Payment Terms:\nPayment is due immediately upon completion of work or as per agreed credit terms.\n2. Udyam Registration Number: UDYAM-MH-04-0182849\n3. Goods and Services:\nThe goods/services provided are subject to GST as applicable and have been charged accordingly.\n4. Jurisdiction:\nAll disputes are subject to the jurisdiction of the courts in Maharashtra, Aurangabad, India.", "type": "INV", "updated": 1792558162341}, "d_inv31": {"created": 1792557960000, "date": "2026-09-30", "due": "2026-10-07", "id": "d_inv31", "igst": false, "lines": [{"desc": "fabrication 4.5 meter * 5 meters 35 × 5 mm Angle\n25 × 3 mm Flat Patti\n20 × 40 mm Square Pipe\nRed Coated color", "gst": 18, "hsn": "", "name": "MS RACK DOOR", "qty": 1, "rate": 72600, "unit": "PCS"}], "no": "FY2026-27/31", "notes": "", "party": {"address": "Gut No. 378, Plot No. 9,10,11, 11 KM Stone, Pune Highway, Village Waluj, Chhatrapati Sambhajinagar, Maharashtra, 431133", "gstin": "27AAACA5579P1Z1", "id": "p_ajanta", "name": "AJANTA PHARMA LTD.", "pan": "AAACA5579P", "phone": ""}, "payments": [], "pos": "Maharashtra", "ref": "", "shipAddress": "", "shipName": "", "shipSame": true, "terms": "1. Payment Terms:\nPayment is due immediately upon completion of work or as per agreed credit terms.\n2. Udyam Registration Number: UDYAM-MH-04-0182849\n3. Goods and Services:\nThe goods/services provided are subject to GST as applicable and have been charged accordingly.\n4. Jurisdiction:\nAll disputes are subject to the jurisdiction of the courts in Maharashtra, Aurangabad, India.", "type": "INV", "updated": 1792557960000}}};
+const IDB_NAME = "rsf-billing-db", STORES = ["config","parties","items","docs"];
+let IDB = null;
+function idbOpen(){
+  return new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error("no indexedDB"));
+    const r = indexedDB.open(IDB_NAME, 1);
+    r.onupgradeneeded = () => { const d = r.result; STORES.forEach(n => { if (!d.objectStoreNames.contains(n)) d.createObjectStore(n); }); };
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); r.onblocked = () => rej(new Error("blocked"));
+  });
+}
+function idbWrite(ops){ // ops: [store, key, value|null]
+  return new Promise((res, rej) => {
+    const t = IDB.transaction([...new Set(ops.map(o => o[0]))], "readwrite");
+    ops.forEach(([st, k, v]) => { const os = t.objectStore(st); v === null ? os.delete(k) : os.put(v, k); });
+    t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+  });
+}
+function idbReadAll(){
+  return new Promise((res, rej) => {
+    const t = IDB.transaction(STORES, "readonly"), out = {};
+    STORES.forEach(st => { const os = t.objectStore(st), ks = os.getAllKeys(), vs = os.getAll(); t.addEventListener("complete", () => { const o = {}; ks.result.forEach((k, i) => o[k] = vs.result[i]); out[st] = o; }); });
+    t.oncomplete = () => setTimeout(() => res(out)); t.onerror = () => rej(t.error);
+  });
+}
+async function idbLoad(){
+  const o = await idbReadAll();
+  S.co = {...DEFAULT_CO, ...(o.config.company || {})}; S.parties = o.parties; S.items = o.items; S.docs = o.docs;
+}
+async function idbImport(src){
+  const ops = [];
+  if (src.co) ops.push(["config","company",src.co]);
+  ["parties","items","docs"].forEach(c => Object.entries(src[c] || {}).forEach(([k, v]) => ops.push([c, k, v])));
+  if (ops.length) await idbWrite(ops);
+}
+async function startLocal(){
+  try {
+    IDB = await idbOpen(); MODE = "idb";
+    await idbLoad();
+    if (!Object.keys(S.docs).length && !Object.keys(S.items).length && !Object.keys(S.parties).length) {
+      let src = null;
+      try { const raw = localStorage.getItem(LS_KEY); if (raw) src = JSON.parse(raw); } catch(e) {}
+      src = src || SEED;
+      if (src) { await idbImport(src); await idbLoad(); }
+    }
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e) {}
+    setSync("Saved in database on this device", true);
+  } catch(e) {
+    IDB = null; MODE = "local"; loadLocal(); setSync("Saved in this browser", false);
+  }
+  render();
+}
+const lastBackup = () => { try { return localStorage.getItem("rsf-last-backup") || ""; } catch(e) { return ""; } };
+const markBackup = () => { try { localStorage.setItem("rsf-last-backup", today()); } catch(e) {} };
+function backupDue(){ if (MODE !== "idb" || !Object.keys(S.docs).length) return false; const lb = lastBackup(); return !lb || lb < addDays(today(), -7); }
+async function downloadBackup(){
+  const data = JSON.stringify({app:"rsf-billing", version:1, exported:new Date().toISOString(), co:S.co, parties:S.parties, items:S.items, docs:S.docs}, null, 1);
+  await saveFile(`RS Fabrication backup ${today()}.json`, new Blob([data], {type:"application/json"}));
+  markBackup();
+}
+
+/* ---------- boot ---------- */
+async function boot(){
+  if (window.claude && typeof window.claude.use === "function") {
+    setSync("Connecting", false); render();
+    let db = null;
+    try { db = await window.claude.use("db"); } catch(e) {}
+    try { DL = await window.claude.use("downloads"); } catch(e) {}
+    if (db) {
+      DB = db; MODE = "db";
+      try { const u = await window.claude.use("user"); const w = u ? await u.can("data.write") : null; if (w === false) CANWRITE = false; } catch(e) {}
+      const onErr = e => { setSync("Offline — reload to reconnect", false); };
+      DB.doc("config/company").onSnapshot(s => { S.co = {...DEFAULT_CO, ...(s.exists ? s.data() : {})}; READY.company = true; softRender(); }, onErr);
+      ["parties","items","docs"].forEach(col => DB.collection(col).onSnapshot(snap => {
+        const o = {}; snap.docs.forEach(x => o[x.id] = x.data()); S[col] = o; READY[col] = true;
+        setSync(snap.metadata.fromCache ? "Syncing" : "Saved online", !snap.metadata.fromCache); softRender();
+      }, onErr));
+      return;
+    }
+    return startLocal();
+  }
+  try {
+    const st = await api("status");
+    if (typeof st.setup !== "boolean") throw new Error("no api");
+    MODE = "server";
+    if (st.setup) return renderAuth("setup");
+    if (!st.user) return renderAuth("login");
+    USER = st.user; await startServer();
+  } catch(e) {
+    if (MODE === "server") { setSync("Cannot reach server", false); toast("Could not load data from the server. Check your internet and reload."); return; }
+    return startLocal();
+  }
+}
+let USER = "", POLL = null;
+async function api(a, body){
+  const opt = body ? {method:"POST", headers:{"Content-Type":"application/json","X-RSF":"1"}, body: JSON.stringify(body), credentials:"same-origin"} : {credentials:"same-origin"};
+  const r = await fetch("api.php?a=" + a, opt);
+  let j = null; try { j = await r.json(); } catch(e) {}
+  if (!r.ok || !j) { const e = new Error((j && j.error) || "Server error " + r.status); e.status = r.status; throw e; }
+  return j;
+}
+function serverErr(e){
+  if (e && e.status === 401) { toast("Your login has ended. Please log in again."); renderAuth("login"); }
+  else toast((e && e.message && !/^Server error|fetch/i.test(e.message)) ? e.message : "Could not save. Check your internet connection and try again.");
+}
+async function pullAll(){
+  const j = await api("all");
+  S.co = {...DEFAULT_CO, ...(j.co || {})}; S.parties = j.parties || {}; S.items = j.items || {}; S.docs = j.docs || {};
+  setSync("Saved online · " + USER, true);
+}
+async function startServer(){
+  await pullAll(); render();
+  clearInterval(POLL);
+  POLL = setInterval(() => { if (!document.hidden && !isEditing() && USER) pullAll().then(softRender).catch(e => { if (e.status === 401) renderAuth("login"); else setSync("Offline", false); }); }, 45000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && !isEditing() && USER) pullAll().then(softRender).catch(()=>{}); });
+}
+function renderAuth(kind){
+  clearInterval(POLL); USER = "";
+  $("#tabs").innerHTML = ""; setSync(kind === "setup" ? "First-time setup" : "Locked", false);
+  const m = $("#main");
+  m.innerHTML = `<form class="panel pad stack" id="authf" style="max-width:380px;margin:40px auto">
+    <h1>${kind === "setup" ? "Create your login" : "Log in"}</h1>
+    <div class="muted small">${kind === "setup" ? "This is the first time this billing website is opened. Choose the username and password you will use from every device." : esc(S.co.name || "Billing")}</div>
+    <label class="f"><span>Username</span><input id="au" autocomplete="username" required></label>
+    <label class="f"><span>Password</span><input id="ap" type="password" autocomplete="${kind === "setup" ? "new-password" : "current-password"}" required minlength="${kind === "setup" ? 6 : 1}"></label>
+    <button class="btn pri" type="submit">${kind === "setup" ? "Create login" : "Log in"}</button>
+    <div class="small" id="aerr" style="color:var(--bad)"></div></form>`;
+  $("#au").focus();
+  $("#authf").onsubmit = async e => {
+    e.preventDefault(); $("#aerr").textContent = "";
+    try { const j = await api(kind, {user: $("#au").value, pass: $("#ap").value}); USER = j.user; UI.tab = "dash"; UI.view = null; await startServer(); }
+    catch(err) { $("#aerr").textContent = err.message; }
+  };
+}
+boot();
+</script>
+</body></html>

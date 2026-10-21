@@ -1,0 +1,42 @@
+{
+  "name": "rs-fabrication-billing",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "npm run lint && next build",
+    "start": "next start",
+    "lint": "eslint app components lib scripts",
+    "test": "tsx --test lib/billing.test.ts",
+    "admin:reset": "node --env-file=.env.local --import tsx scripts/reset-admin.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "jose": "^6.1.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.2",
+    "mongoose": "^8.18.0",
+    "next": "^15.5.3",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.6",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@typescript-eslint/eslint-plugin": "^8.72.0",
+    "@typescript-eslint/parser": "^8.72.0",
+    "eslint": "^9.35.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^14.0.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "overrides": {
+    "postcss": "^8.5.23"
+  }
+}

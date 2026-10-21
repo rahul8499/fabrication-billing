@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b334b"/>
+      <stop offset="1" stop-color="#14263a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#23b7a6"/>
+      <stop offset="1" stop-color="#0d8278"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <path d="M112 145h288v20H112z" rx="10" fill="url(#accent)"/>
+  <text x="256" y="325" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="158" font-weight="700" letter-spacing="-14">RS</text>
+  <path d="M170 359h172v14H170z" rx="7" fill="#23b7a6" opacity=".9"/>
+</svg>
