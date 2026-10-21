@@ -330,7 +330,7 @@ export default function BillingApp() {
 
   return <div className="app-shell">
     <header className="topbar">
-      <div className="brand"><button className="mobile-menu-toggle" aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(value => !value)}><span>{mobileNavOpen ? "×" : "☰"}</span></button><div className="brand-mark">RS</div><div><strong>{company.name || "RS Fabrication"}</strong><span>Billing · Quotations · Purchases</span></div></div>
+      <div className="brand"><button className={`mobile-menu-toggle${mobileNavOpen ? " is-open" : ""}`} aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(value => !value)}><span aria-hidden="true"><i /><i /><i /></span></button><div className="brand-mark">RS</div><div><strong>{company.name || "RS Fabrication"}</strong><span>Billing · Quotations · Purchases</span></div></div>
       <div className="top-actions"><PwaInstallButton /><span className="signed-in">{username}</span><button className="button ghost small" onClick={() => void runAction(signOut)}>Log out</button></div>
     </header>
     <nav className="navigation">{NAV.map(([key, label, icon]) => <button className={tab === key ? "nav-item active" : "nav-item"} key={key} onClick={() => selectTab(key)}><span>{icon}</span>{label}</button>)}</nav>
